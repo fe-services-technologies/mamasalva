@@ -1,0 +1,11 @@
+2026-11-19 18:49:41.742 WAT [21] LOG:  starting PostgreSQL 15.20 (Debian 15.20-0+deb12u1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+2026-11-19 18:49:41.751 WAT [21] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2026-11-19 18:49:41.751 WAT [21] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2026-11-19 18:49:41.752 WAT [21] WARNING:  could not create listen socket for "127.0.0.1"
+2026-11-19 18:49:41.752 WAT [21] FATAL:  could not create any TCP/IP sockets
+2026-11-19 18:49:41.762 WAT [21] LOG:  database system is shut down
+2026-11-19 18:50:03.938 WAT [21] LOG:  starting PostgreSQL 15.20 (Debian 15.20-0+deb12u1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+2026-11-19 18:50:03.942 WAT [21] LOG:  listening on IPv4 address "127.0.0.1", port 5433
+2026-11-19 18:50:03.963 WAT [21] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+2026-11-19 18:50:03.997 WAT [24] LOG:  database system was shut down at 2026-11-19 18:49:21 WAT
+2026-11-19 18:50:04.049 WAT [21] LOG:  database system is ready to accept connections

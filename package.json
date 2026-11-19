@@ -1,0 +1,15 @@
+{
+  "name": "mamasalva",
+  "version": "1.0.0",
+  "description": "MATERNITY SOS — Sistema Integrado de Gestão e Coordenação de Emergências Obstétricas (Província de Luanda, Angola)",
+  "private": true,
+  "scripts": {
+    "backend": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "db:setup": "psql -h /tmp -p 5433 -U mamasalva_user -d mamasalva -f database/schema.sql && psql -h /tmp -p 5433 -U mamasalva_user -d mamasalva -f database/seed.sql"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3"
+  }
+}

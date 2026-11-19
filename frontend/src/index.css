@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --bg-app: #0B1120;
+  --bg-surface: #0F172A;
+  --bg-panel: #1E293B;
+  --bg-card: #0F172A;
+  --border-subtle: #334155;
+  --border-strong: #475569;
+  
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  
+  /* Semantic Priority Colors */
+  --priority-l1: #DC2626;
+  --priority-l1-bg: rgba(220, 38, 38, 0.18);
+  --priority-l1-border: #B91C1C;
+  
+  --priority-l2: #D97706;
+  --priority-l2-bg: rgba(217, 119, 6, 0.18);
+  --priority-l2-border: #B45309;
+  
+  --priority-l3: #059669;
+  --priority-l3-bg: rgba(5, 150, 105, 0.18);
+  --priority-l3-border: #15803D;
+
+  /* Road Accessibility */
+  --access-normal: #10B981;
+  --access-conditioned: #F59E0B;
+  --access-impossible: #EF4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Otimização explícita para 125% zoom / alta densidade de ecrã no Chrome */
+@media screen and (min-resolution: 115dpi), screen and (min-resolution: 1.2dppx) {
+  html {
+    font-size: 16.5px;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.55;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: var(--text-main);
+  background-color: #0F172A;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.4;
+  transition: border-color 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 1px #38BDF8;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
