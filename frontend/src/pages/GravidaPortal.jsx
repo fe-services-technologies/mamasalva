@@ -9,12 +9,15 @@ export const GravidaPortal = () => {
   const { user } = useAuth();
   const { subscribe } = useSocket();
 
-  const [activeTab, setActiveTab] = useState('propria'); // 'propria', 'outra', 'nao_cadastrada'
+  // App navigation tabs: 'socorro' (emergência), 'caderneta' (minha gravidez), 'ajudar' (ajudar outra pessoa)
+  const [currentTab, setCurrentTab] = useState('socorro');
+
   const [activeOccurrence, setActiveOccurrence] = useState(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
   // Formulário Grávida
   const [sintomasSelecionados, setSintomasSelecionados] = useState([]);
@@ -26,27 +29,22 @@ export const GravidaPortal = () => {
   const [usarGps, setUsarGps] = useState(true);
   const [coords, setCoords] = useState({ lat: -8.8105, lon: 13.2750 });
 
-  // Formulário Cidadão: Pesquisa de Grávida
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedGravida, setSelectedGravida] = useState(null);
+  // Modo Ajudar Outra Pessoa (Cidadão)
+  const [nomeOutra, setNomeOutra] = useState('');
+  const [relacaoOutra, setRelacaoOutra] = useState('Vizinho');
 
-  // Formulário Não Cadastrada
-  const [nomeNaoCadastrada, setNomeNaoCadastrada] = useState('');
-  const [relacaoSolicitante, setRelacaoSolicitante] = useState('Vizinho');
-
-  const sintomasOpcoes = [
-    'Dor de cabeça violenta / Visão turva ou pontos brilhantes (Sinais de Eclâmpsia)',
-    'Hemorragia vaginal ativa ou sangramento abundante',
-    'Dor abdominal súbita intensa em barra',
-    'Perda contínua de água / Bolsa rota',
-    'Sensação de pressão / Cabeça a querer nascer (Trabalho de Parto Avançado)',
-    'Febre alta e calafrios intensos',
+  const sintomasAmigaveis = [
+    { id: 'hemorragia', icon: '🩸', label: 'Sangramento / Sangue', desc: 'Perda de sangue pela vagina' },
+    { id: 'dores', icon: '⚡', label: 'Dores Fortes na Barriga', desc: 'Contrações ou cólicas muito intensas' },
+    { id: 'bolsa', icon: '💧', label: 'Bolsa Rota / Água a Sair', desc: 'Líquido a escorrer pelas pernas' },
+    { id: 'eclampsia', icon: '🧠', label: 'Dor de Cabeça / Tonturas', desc: 'Visão com pontos brilhantes ou pressão alta' },
+    { id: 'parto', icon: '👶', label: 'Bebé a Querer Nascer', desc: 'Sensação de cabeça a querer sair' },
+    { id: 'febre', icon: '🌡️', label: 'Febre Alta e Tremores', desc: 'Corpo muito quente ou calafrios fortes' },
   ];
 
-  const handleToggleSintoma = (s) => {
+  const handleToggleSintoma = (label) => {
     setSintomasSelecionados((prev) =>
-      prev.includes(s) ? prev.filter((item) => item !== s) : [...prev, s]
+      prev.includes(label) ? prev.filter((item) => item !== label) : [...prev, label]
     );
   };
 
@@ -54,9 +52,10 @@ export const GravidaPortal = () => {
     try {
       const res = await api.getOccurrences();
       if (res.success && res.ocorrencias.length > 0) {
-        // Encontrar ocorrência em andamento mais recente
         const active = res.ocorrencias.find((o) => o.estado_ocorrencia !== 'Concluída' && o.estado_ocorrencia !== 'Cancelada');
-        setActiveOccurrence(active || res.ocorrencias[0]);
+        setActiveOccurrence(active || null);
+      } else {
+        setActiveOccurrence(null);
       }
     } catch (err) {
       console.error('Falha ao carregar ocorrências:', err);
@@ -68,9 +67,8 @@ export const GravidaPortal = () => {
   useEffect(() => {
     fetchActiveOccurrences();
 
-    const unsubUpdated = subscribe('occurrence:updated', (data) => {
-      fetchActiveOccurrences();
-    });
+    const unsubUpdated = subscribe('occurrence:updated', () => fetchActiveOccurrences());
+    const unsubCreated = subscribe('occurrence:created', () => fetchActiveOccurrences());
     const unsubAmbulance = subscribe('ambulance:position_updated', (data) => {
       if (activeOccurrence && activeOccurrence.ambulancia_id === data.ambulanceId) {
         setActiveOccurrence((prev) => ({
@@ -84,22 +82,22 @@ export const GravidaPortal = () => {
 
     return () => {
       unsubUpdated();
+      unsubCreated();
       unsubAmbulance();
     };
   }, [user]);
 
-  // Simular captura de GPS do navegador com fallback
   const handleCaptureGps = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
           setUsarGps(true);
-          setSuccessMsg('Localização GPS capturada com sucesso.');
+          setSuccessMsg('Localização GPS capturada com sucesso!');
           setTimeout(() => setSuccessMsg(''), 4000);
         },
         () => {
-          setErrorMsg('Sinal de GPS indisponível no dispositivo. Ativado fallback de entrada manual de endereço.');
+          setErrorMsg('Sinal de GPS fraco. Por favor, confirme o Bairro e o Ponto de Referência.');
           setUsarGps(false);
           setTimeout(() => setErrorMsg(''), 5000);
         }
@@ -109,43 +107,29 @@ export const GravidaPortal = () => {
     }
   };
 
-  const handleSearchGravida = async (q) => {
-    setSearchQuery(q);
-    if (q.trim().length >= 2) {
-      try {
-        const res = await api.searchGravidas(q);
-        if (res.success) setSearchResults(res.gravidas);
-      } catch (err) {
-        console.error('Falha na pesquisa:', err);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const handleSubmitEmergency = async (tipo) => {
+  const handleSubmitSocorro = async (isAjudaOutra = false) => {
     setErrorMsg('');
     setSuccessMsg('');
 
     if (sintomasSelecionados.length === 0 && !outrosSintomas.trim()) {
-      setErrorMsg('Por favor, assinale pelo menos um sintoma ou descreva o que está a sentir.');
+      setErrorMsg('Por favor, toque em pelo menos um sintoma que esteja a sentir.');
       return;
     }
 
     if (!bairro.trim() || !pontoReferencia.trim()) {
-      setErrorMsg('O bairro e o ponto de referência são indispensáveis para orientar a equipa em Luanda.');
+      setErrorMsg('Por favor, informe o Bairro e um Ponto de Referência para a equipa saber onde ir.');
       return;
     }
 
     setRequesting(true);
     try {
-      let payload = {
-        canal_entrada: tipo === 'propria' ? 'App Grávida' : tipo === 'outra' ? 'Cidadão Auxílio' : 'Grávida Não Cadastrada',
-        solicitante_nome: tipo === 'propria' ? user.nome : `${user.nome} (Acompanhante)`,
+      const payload = {
+        canal_entrada: isAjudaOutra ? 'App Cidadão Auxílio' : 'App MATERNITY SOS Luanda',
+        solicitante_nome: isAjudaOutra ? `${user?.nome || 'Acompanhante'} (Ajudando)` : (user?.nome || 'Esperança Manuel'),
         solicitante_telefone: telefoneContato,
-        tipo_solicitante: tipo === 'propria' ? 'propria_gravida' : 'cidadao_conhecido',
-        relacao_gravida: tipo === 'propria' ? 'Própria' : relacaoSolicitante,
-        descricao_sintomas: `${sintomasSelecionados.join('; ')}${outrosSintomas ? ` - Outros: ${outrosSintomas}` : ''}`,
+        tipo_solicitante: isAjudaOutra ? 'cidadao_conhecido' : 'propria_gravida',
+        relacao_gravida: isAjudaOutra ? relacaoOutra : 'Própria',
+        descricao_sintomas: `${sintomasSelecionados.join('; ')}${outrosSintomas ? ` - Outro: ${outrosSintomas}` : ''}`,
         sinais_alerta: sintomasSelecionados,
         municipio: 'Luanda',
         bairro,
@@ -153,26 +137,24 @@ export const GravidaPortal = () => {
         ponto_referencia: pontoReferencia,
         latitude: coords.lat,
         longitude: coords.lon,
-        origem_coordenadas: usarGps ? 'GPS Automático' : 'Entrada Manual',
+        origem_coordenadas: usarGps ? 'GPS Automático do Telemóvel' : 'Entrada Manual',
       };
 
-      if (tipo === 'outra' && selectedGravida) {
-        payload.gravida_id = selectedGravida.id;
-        payload.numero_processo = selectedGravida.numero_processo;
-      } else if (tipo === 'nao_cadastrada') {
+      if (isAjudaOutra) {
         payload.gravida_cadastrada = false;
         payload.tipo_solicitante = 'cidadao_desconhecido';
-        payload.solicitante_nome = nomeNaoCadastrada ? `${nomeNaoCadastrada} (Registo Emergencial)` : 'Grávida Não Identificada';
+        payload.solicitante_nome = nomeOutra ? `${nomeOutra} (Pedido Comunitário)` : 'Grávida na Comunidade';
       }
 
       const res = await api.createOccurrence(payload);
       if (res.success) {
         setActiveOccurrence(res.ocorrencia);
-        setSuccessMsg(`Pedido de socorro ${res.ocorrencia.protocolo_codigo} enviado para a Central 114 de Luanda!`);
+        setSuccessMsg(`Pedido de socorro ${res.ocorrencia.protocolo_codigo} enviado! A equipa 114 já foi alertada.`);
+        setShowForm(false);
         fetchActiveOccurrences();
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Falha ao enviar solicitação de socorro.');
+      setErrorMsg(err.message || 'Falha ao enviar pedido de socorro. Tente ligar 114.');
     } finally {
       setRequesting(false);
     }
@@ -181,454 +163,853 @@ export const GravidaPortal = () => {
   const isCitizen = user?.perfil === 'cidadao';
 
   return (
-    <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 28px' }}>
+    <div
+      style={{
+        maxWidth: '680px', /* Escala 125% confortável */
+        margin: '0 auto',
+        padding: '20px 18px 50px',
+      }}
+    >
       {/* Messages */}
       {successMsg && (
-        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '14px 18px', borderRadius: '6px', marginBottom: '18px', fontWeight: '600', fontSize: '14px' }}>
-          ✓ {successMsg}
+        <div
+          style={{
+            backgroundColor: '#ECFDF5',
+            border: '1.5px solid #A7F3D0',
+            color: '#065F46',
+            padding: '16px 20px',
+            borderRadius: '12px',
+            marginBottom: '20px',
+            fontWeight: '700',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>✓</span>
+          <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.2)', border: '1px solid #DC2626', color: '#FCA5A5', padding: '14px 18px', borderRadius: '6px', marginBottom: '18px', fontSize: '14px' }}>
-          ⚠ {errorMsg}
-        </div>
-      )}
-
-      {/* Se houver ocorrência ativa, exibe o painel de acompanhamento em tempo real */}
-      {activeOccurrence && activeOccurrence.estado_ocorrencia !== 'Concluída' && (
         <div
           style={{
-            backgroundColor: '#0F172A',
-            border: '2px solid #0284C7',
-            borderRadius: '8px',
-            padding: '24px',
-            marginBottom: '28px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
-          }}
-        >
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '14px', borderBottom: '1px solid #1E293B', paddingBottom: '16px', marginBottom: '18px' }}>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#38BDF8', letterSpacing: '0.04em' }}>
-                OCORRÊNCIA EM CURSO
-              </span>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#F8FAFC', marginTop: '2px' }}>
-                Protocolo: {activeOccurrence.protocolo_codigo}
-              </h2>
-              <span style={{ fontSize: '13.5px', color: '#94A3B8' }}>
-                Zona: {activeOccurrence.bairro} ({activeOccurrence.ponto_referencia})
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <PriorityBadge prioridade={activeOccurrence.prioridade} />
-              <StatusBadge estado={activeOccurrence.estado_ocorrencia} />
-            </div>
-          </div>
-
-          {/* Ciclo em 6 etapas */}
-          <div style={{ marginBottom: '16px' }}>
-            <LifecycleStepTracker etapaAtual={activeOccurrence.etapa_atual} estado={activeOccurrence.estado_ocorrencia} />
-          </div>
-
-          {/* Acessibilidade da via */}
-          <div style={{ marginBottom: '16px' }}>
-            <RoadAccessibilityBadge
-              classificacao={activeOccurrence.classificacao_acesso_local}
-              pontoEncontro={activeOccurrence.ponto_encontro_coordenadas}
-            />
-          </div>
-
-          {/* Grid com Mapa e Detalhes da Coordenação */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-            <div>
-              <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#94A3B8', marginBottom: '8px', textTransform: 'uppercase' }}>
-                Posição Simulada e Rota de Resgate (Luanda):
-              </h4>
-              <LuandaMap
-                height="260px"
-                patientCoords={{ lat: activeOccurrence.latitude, lon: activeOccurrence.longitude }}
-                patientLabel="Local da Grávida"
-                ambulanceCoords={activeOccurrence.ambulancia_lat ? { lat: activeOccurrence.ambulancia_lat, lon: activeOccurrence.ambulancia_lon } : null}
-                ambulanceLabel={activeOccurrence.ambulancia_codigo || 'Viatura Despachada'}
-                roadAccessStatus={activeOccurrence.classificacao_acesso_local}
-                rendezvousCoords={activeOccurrence.ponto_encontro_coordenadas ? { lat: -8.8140, lon: 13.2715 } : null}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-              <div style={{ backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>Estado da Ambulância:</div>
-                <div style={{ fontWeight: '700', color: '#38BDF8', fontSize: '14px' }}>
-                  {activeOccurrence.ambulancia_codigo ? `${activeOccurrence.ambulancia_codigo} — ${activeOccurrence.ambulancia_instituicao || 'INEMA'}` : 'Aguardando atribuição pela Central 114'}
-                </div>
-                {activeOccurrence.ambulancia_equipa && (
-                  <div style={{ fontSize: '12px', color: '#E2E8F0', marginTop: '2px' }}>
-                    Equipa: {activeOccurrence.ambulancia_equipa}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>Maternidade Destino Coordenada:</div>
-                <div style={{ fontWeight: '700', color: '#10B981', fontSize: '14px' }}>
-                  {activeOccurrence.maternidade_nome || 'A definir conforme triagem clínica'}
-                </div>
-                {activeOccurrence.maternidade_comunicada && (
-                  <div style={{ fontSize: '12px', color: '#A7F3D0', marginTop: '2px' }}>
-                    ✓ Notificação antecipada transmitida à equipa hospitalar de recepção
-                  </div>
-                )}
-              </div>
-
-              <div style={{ backgroundColor: '#0B1120', padding: '10px 12px', borderRadius: '6px', border: '1px solid #1E293B' }}>
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>Orientação Imediata ao Utente:</div>
-                <p style={{ color: '#E2E8F0', fontSize: '12px', marginTop: '2px' }}>
-                  Mantenha a gestante deitada do lado esquerdo (decúbito lateral esquerdo), não ofereça alimentos sólidos e mantenha o telefone desimpedido para contactos da equipa de socorro.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cartão de Identificação Pré-Natal da Grávida Cadastrada (Apenas perfil gravida) */}
-      {!isCitizen && user?.linkedData && (
-        <div
-          style={{
-            backgroundColor: '#1E293B',
-            border: '1px solid #334155',
-            borderRadius: '8px',
+            backgroundColor: '#FEF2F2',
+            border: '1.5px solid #FCA5A5',
+            color: '#991B1B',
             padding: '16px 20px',
-            marginBottom: '24px',
+            borderRadius: '12px',
+            marginBottom: '20px',
+            fontSize: '16px',
+            fontWeight: '600',
             display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            gap: '16px',
             alignItems: 'center',
+            gap: '10px',
           }}
         >
-          <div>
-            <span style={{ fontSize: '11px', color: '#38BDF8', fontWeight: '700', letterSpacing: '0.04em' }}>
-              CADASTRO PRÉ-NATAL VINCULADO
+          <span style={{ fontSize: '20px' }}>⚠️</span>
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* App Navigation Segmented Control (Escala 125%) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isCitizen ? '1fr 1fr' : '1fr 1fr 1fr',
+          gap: '8px',
+          backgroundColor: '#E2E8F0',
+          padding: '6px',
+          borderRadius: '14px',
+          marginBottom: '24px',
+        }}
+      >
+        <button
+          onClick={() => setCurrentTab('socorro')}
+          style={{
+            padding: '12px 10px',
+            borderRadius: '10px',
+            fontSize: '15px',
+            fontWeight: currentTab === 'socorro' ? '800' : '600',
+            backgroundColor: currentTab === 'socorro' ? '#FFFFFF' : 'transparent',
+            color: currentTab === 'socorro' ? '#DC2626' : '#64748B',
+            boxShadow: currentTab === 'socorro' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>🚨</span>
+          <span>{activeOccurrence ? 'Seguir Socorro' : 'Pedir Ajuda'}</span>
+        </button>
+
+        {!isCitizen && (
+          <button
+            onClick={() => setCurrentTab('caderneta')}
+            style={{
+              padding: '12px 10px',
+              borderRadius: '10px',
+              fontSize: '15px',
+              fontWeight: currentTab === 'caderneta' ? '800' : '600',
+              backgroundColor: currentTab === 'caderneta' ? '#FFFFFF' : 'transparent',
+              color: currentTab === 'caderneta' ? '#0284C7' : '#64748B',
+              boxShadow: currentTab === 'caderneta' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>🤰</span>
+            <span>Minha Gravidez</span>
+          </button>
+        )}
+
+        <button
+          onClick={() => setCurrentTab('ajudar')}
+          style={{
+            padding: '12px 10px',
+            borderRadius: '10px',
+            fontSize: '15px',
+            fontWeight: currentTab === 'ajudar' ? '800' : '600',
+            backgroundColor: currentTab === 'ajudar' ? '#FFFFFF' : 'transparent',
+            color: currentTab === 'ajudar' ? '#059669' : '#64748B',
+            boxShadow: currentTab === 'ajudar' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>🤝</span>
+          <span>Ajudar Vizinha</span>
+        </button>
+      </div>
+
+      {/* ======================================================== */}
+      {/* ABA 1: SOCORRO & ACOMPANHAMENTO EM TEMPO REAL            */}
+      {/* ======================================================== */}
+      {currentTab === 'socorro' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+          {/* Se houver ocorrência ativa, exibe o cartão acolhedor de acompanhamento */}
+          {activeOccurrence && activeOccurrence.estado_ocorrencia !== 'Concluída' && (
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '2.5px solid #0284C7',
+                borderRadius: '20px',
+                padding: '26px 24px',
+                boxShadow: '0 12px 25px -4px rgba(2, 132, 199, 0.14)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <span
+                    style={{
+                      fontSize: '12.5px',
+                      fontWeight: '800',
+                      backgroundColor: '#E0F2FE',
+                      color: '#0284C7',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    SOCORRO EM ANDAMENTO
+                  </span>
+                  <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginTop: '6px' }}>
+                    Protocolo: {activeOccurrence.protocolo_codigo}
+                  </h3>
+                </div>
+                <StatusBadge estado={activeOccurrence.estado_ocorrencia} />
+              </div>
+
+              {/* Barra de Progresso Simples */}
+              <div style={{ margin: '18px 0' }}>
+                <LifecycleStepTracker etapaAtual={activeOccurrence.etapa_atual} estado={activeOccurrence.estado_ocorrencia} />
+              </div>
+
+              {/* Informação sobre a Ambulância e Hospital */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                <div
+                  style={{
+                    backgroundColor: '#F0F9FF',
+                    border: '1.5px solid #BAE6FD',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', color: '#0369A1', fontWeight: '800' }}>
+                    🚑 Ambulância a Caminho:
+                  </div>
+                  <div style={{ fontSize: '16.5px', fontWeight: '800', color: '#0F172A', marginTop: '3px' }}>
+                    {activeOccurrence.ambulancia_codigo ? `${activeOccurrence.ambulancia_codigo} — ${activeOccurrence.ambulancia_instituicao || 'INEMA'}` : 'A Central 114 está a enviar a viatura mais próxima'}
+                  </div>
+                  {activeOccurrence.ambulancia_equipa && (
+                    <div style={{ fontSize: '14px', color: '#475569', marginTop: '3px' }}>
+                      Socorristas: {activeOccurrence.ambulancia_equipa}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: '#ECFDF5',
+                    border: '1.5px solid #A7F3D0',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', color: '#047857', fontWeight: '800' }}>
+                    🏥 Maternidade de Destino:
+                  </div>
+                  <div style={{ fontSize: '16.5px', fontWeight: '800', color: '#0F172A', marginTop: '3px' }}>
+                    {activeOccurrence.maternidade_nome || 'Maternidade Lucrécia Paim (Maianga)'}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#059669', marginTop: '3px', fontWeight: '600' }}>
+                    ✓ Equipa médica hospitalar já foi avisada da sua chegada
+                  </div>
+                </div>
+
+                {/* Se a rua for de difícil acesso */}
+                {activeOccurrence.classificacao_acesso_local === 'Acesso impossível para ambulância convencional' && (
+                  <div
+                    style={{
+                      backgroundColor: '#FEF2F2',
+                      border: '1.5px solid #FCA5A5',
+                      padding: '16px 18px',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#DC2626' }}>
+                      ⚠️ Ponto de Encontro da Ambulância:
+                    </div>
+                    <p style={{ fontSize: '15px', color: '#991B1B', marginTop: '4px', lineHeight: 1.45, fontWeight: '600' }}>
+                      Como a sua rua é de difícil acesso para o carro, a ambulância vai aguardar em: <strong>{activeOccurrence.ponto_encontro_coordenadas || activeOccurrence.ponto_referencia}</strong>.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Mapa Limpo Ampliado */}
+              <div style={{ marginTop: '20px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#64748B', display: 'block', marginBottom: '8px' }}>
+                  Acompanhe a viatura no mapa:
+                </span>
+                <LuandaMap
+                  height="280px"
+                  patientCoords={{ lat: activeOccurrence.latitude, lon: activeOccurrence.longitude }}
+                  patientLabel="Você Está Aqui"
+                  ambulanceCoords={activeOccurrence.ambulancia_lat ? { lat: activeOccurrence.ambulancia_lat, lon: activeOccurrence.ambulancia_lon } : null}
+                  ambulanceLabel={activeOccurrence.ambulancia_codigo || 'Viatura'}
+                  roadAccessStatus={activeOccurrence.classificacao_acesso_local}
+                  rendezvousCoords={activeOccurrence.ponto_encontro_coordenadas ? { lat: -8.8140, lon: 13.2715 } : null}
+                />
+              </div>
+
+              {/* Dicas de Primeiros Socorros Imediatos */}
+              <div
+                style={{
+                  marginTop: '20px',
+                  backgroundColor: '#FFFBEB',
+                  border: '1.5px solid #FDE68A',
+                  borderRadius: '14px',
+                  padding: '18px 20px',
+                }}
+              >
+                <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#B45309', marginBottom: '10px' }}>
+                  💡 O QUE FAZER ENQUANTO ESPERA A EQUIPA:
+                </div>
+                <ul style={{ paddingLeft: '22px', fontSize: '14.5px', color: '#78350F', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <li><strong>Deite-se do lado esquerdo</strong> para oxigenar melhor o bebé.</li>
+                  <li><strong>Respire fundo</strong> pelo nariz e deite o ar pela boca calmamente.</li>
+                  <li><strong>Mantenha o telefone livre</strong> para atender a chamada dos socorristas.</li>
+                  <li>Não coma alimentos pesados e não tome medicamentos por conta própria.</li>
+                </ul>
+              </div>
+
+              {/* Botão de contacto direto com o operador */}
+              <div style={{ marginTop: '20px' }}>
+                <a
+                  href="tel:114"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    fontWeight: '800',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>📞</span>
+                  <span>Falar com o Operador da Central 114</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Cartão de Boas-Vindas da Mamã (quando não houver emergência ativa) */}
+          {(!activeOccurrence || activeOccurrence.estado_ocorrencia === 'Concluída') && !showForm && (
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '20px',
+                border: '1.5px solid #E2E8F0',
+                padding: '32px 24px',
+                textAlign: 'center',
+                boxShadow: '0 8px 16px -2px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FEF2F2',
+                  border: '2.5px solid #FCA5A5',
+                  color: '#DC2626',
+                  fontSize: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                ♥
+              </div>
+
+              <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#0F172A' }}>
+                Olá, {user?.linkedData?.nome_completo?.split(' ')[0] || user?.nome || 'Mamã'}!
+              </h2>
+              <p style={{ fontSize: '16px', color: '#64748B', marginTop: '6px' }}>
+                Estamos consigo a cada minuto da sua gravidez. Como se está a sentir?
+              </p>
+
+              {user?.linkedData && (
+                <div
+                  style={{
+                    display: 'inline-block',
+                    margin: '14px auto 0',
+                    padding: '6px 16px',
+                    borderRadius: '24px',
+                    backgroundColor: '#E0F2FE',
+                    color: '#0284C7',
+                    fontSize: '14.5px',
+                    fontWeight: '800',
+                  }}
+                >
+                  {user.linkedData.semanas_gestacao} semanas de gestação • Luanda
+                </div>
+              )}
+
+              {/* BOTÃO SOS PRINCIPAL GIGANTE (Escala 125%) */}
+              <div style={{ marginTop: '30px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  className="sos-pulse"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    padding: '24px 28px',
+                    borderRadius: '20px',
+                    fontSize: '20px',
+                    fontWeight: '800',
+                    letterSpacing: '0.02em',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '32px' }}>🚨</span>
+                  <span>ESTOU A PASSAR MAL</span>
+                  <span style={{ fontSize: '15px', fontWeight: '600', opacity: 0.95 }}>
+                    Toque aqui para chamar socorro imediato
+                  </span>
+                </button>
+              </div>
+
+              {/* Botão de Ligação Telefónica Rápida */}
+              <div style={{ marginTop: '16px' }}>
+                <a
+                  href="tel:114"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    backgroundColor: '#F8FAFC',
+                    border: '1.5px solid #CBD5E1',
+                    color: '#0F172A',
+                    padding: '15px 20px',
+                    borderRadius: '14px',
+                    fontSize: '16px',
+                    fontWeight: '800',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>📞</span>
+                  <span>Ligar Grátis para a Central 114</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* FORMULÁRIO DE PEDIDO DE SOCORRO RÁPIDO (SUPER SIMPLIFICADO) */}
+          {showForm && (
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '20px',
+                border: '1.5px solid #E2E8F0',
+                padding: '26px 22px',
+                boxShadow: '0 8px 16px -2px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '21px', fontWeight: '800', color: '#0F172A' }}>
+                    Pedir Socorro Obstétrico
+                  </h3>
+                  <p style={{ fontSize: '14.5px', color: '#64748B', marginTop: '2px' }}>
+                    Selecione o que está a sentir com um toque
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    backgroundColor: '#F1F5F9',
+                    border: '1.5px solid #CBD5E1',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#64748B',
+                  }}
+                >
+                  ✕ Voltar
+                </button>
+              </div>
+
+              {/* Cartões Grandes de Sintomas */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px' }}>
+                {sintomasAmigaveis.map((item) => {
+                  const isChecked = sintomasSelecionados.includes(item.label);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleToggleSintoma(item.label)}
+                      style={{
+                        padding: '15px 18px',
+                        borderRadius: '12px',
+                        backgroundColor: isChecked ? '#FEF2F2' : '#F8FAFC',
+                        border: isChecked ? '2.5px solid #DC2626' : '1.5px solid #E2E8F0',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '14px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '28px' }}>{item.icon}</span>
+                        <div>
+                          <div style={{ fontSize: '16px', fontWeight: '800', color: isChecked ? '#991B1B' : '#0F172A' }}>
+                            {item.label}
+                          </div>
+                          <div style={{ fontSize: '13.5px', color: '#64748B', marginTop: '1px' }}>
+                            {item.desc}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          backgroundColor: isChecked ? '#DC2626' : '#FFFFFF',
+                          border: isChecked ? '2.5px solid #DC2626' : '2px solid #CBD5E1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFFFFF',
+                          fontSize: '15px',
+                          fontWeight: '800',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isChecked ? '✓' : ''}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Localização em Luanda */}
+              <div
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  borderRadius: '14px',
+                  padding: '20px',
+                  marginBottom: '22px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#0F172A' }}>
+                    Onde Você Está em Luanda?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCaptureGps}
+                    style={{
+                      backgroundColor: '#E0F2FE',
+                      color: '#0284C7',
+                      border: '1.5px solid #BAE6FD',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '800',
+                    }}
+                  >
+                    📍 Usar GPS
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', color: '#64748B', fontWeight: '600', marginBottom: '4px' }}>
+                      Bairro em Luanda *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Tala Hady, Cazenga, Viana..."
+                      value={bairro}
+                      onChange={(e) => setBairro(e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13.5px', color: '#64748B', fontWeight: '600', marginBottom: '4px' }}>
+                      Ponto de Referência Conhecido * (Para o socorro achar rápido)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Perto do Centro de Saúde, perto da Escola ou da Bomba..."
+                      value={pontoReferencia}
+                      onChange={(e) => setPontoReferencia(e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão de Enviar Socorro */}
+              <button
+                type="button"
+                onClick={() => handleSubmitSocorro(false)}
+                disabled={requesting}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  padding: '19px',
+                  borderRadius: '14px',
+                  fontSize: '18px',
+                  fontWeight: '800',
+                  boxShadow: '0 5px 14px rgba(220, 38, 38, 0.3)',
+                  border: 'none',
+                }}
+              >
+                {requesting ? 'A Enviar Pedido à Central 114...' : 'CONFIRMAR E CHAMAR SOCORRO AGORA'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 2: MINHA CADERNETA / GRAVIDEZ (INFORMAÇÕES CLÍNICAS) */}
+      {/* ======================================================== */}
+      {currentTab === 'caderneta' && !isCitizen && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              border: '1.5px solid #E2E8F0',
+              padding: '26px 22px',
+              boxShadow: '0 8px 16px -2px rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1.5px solid #F1F5F9', paddingBottom: '20px' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FEF2F2',
+                  color: '#DC2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '30px',
+                  fontWeight: '800',
+                  flexShrink: 0,
+                }}
+              >
+                🤰
+              </div>
+              <div>
+                <h3 style={{ fontSize: '21px', fontWeight: '800', color: '#0F172A' }}>
+                  {user?.linkedData?.nome_completo || user?.nome || 'Esperança Manuel'}
+                </h3>
+                <span style={{ fontSize: '15px', color: '#64748B' }}>
+                  Processo Pré-Natal: <strong style={{ color: '#0F172A' }}>{user?.linkedData?.numero_processo || 'GRAV-2026-0814'}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Destaque das Semanas de Gravidez */}
+            <div
+              style={{
+                marginTop: '20px',
+                backgroundColor: '#F0F9FF',
+                border: '1.5px solid #BAE6FD',
+                borderRadius: '14px',
+                padding: '20px',
+                textAlign: 'center',
+              }}
+            >
+              <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#0369A1' }}>
+                TEMPO DE GESTAÇÃO
+              </span>
+              <div style={{ fontSize: '36px', fontWeight: '800', color: '#0284C7', marginTop: '2px' }}>
+                {user?.linkedData?.semanas_gestacao || 36} Semanas
+              </div>
+              <span style={{ fontSize: '15px', color: '#475569', fontWeight: '600' }}>
+                9º Mês • Últimas semanas antes do parto
+              </span>
+
+              {/* Barra de progresso gestacional */}
+              <div style={{ width: '100%', height: '10px', backgroundColor: '#E2E8F0', borderRadius: '5px', marginTop: '14px', overflow: 'hidden' }}>
+                <div style={{ width: '90%', height: '100%', backgroundColor: '#0284C7', borderRadius: '5px' }} />
+              </div>
+            </div>
+
+            {/* Dados Médicos Rápidos */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
+              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1.5px solid #E2E8F0' }}>
+                <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '600' }}>Grupo Sanguíneo:</span>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#DC2626', marginTop: '2px' }}>
+                  {user?.linkedData?.grupo_sanguineo || 'O+'}
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1.5px solid #E2E8F0' }}>
+                <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '600' }}>Idade:</span>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
+                  {user?.linkedData?.idade || 26} Anos
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1.5px solid #E2E8F0', gridColumn: 'span 2' }}>
+                <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '600' }}>Maternidade de Referência:</span>
+                <div style={{ fontSize: '16px', fontWeight: '800', color: '#059669', marginTop: '2px' }}>
+                  Maternidade Lucrécia Paim (Maianga, Luanda)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dicas de Cuidado para a Mamã */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              border: '1.5px solid #E2E8F0',
+              padding: '22px',
+            }}
+          >
+            <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', marginBottom: '12px' }}>
+              Dicas de Saúde para Esta Semana:
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#475569', lineHeight: 1.5 }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>💧</span>
+                <span>Beba bastante água tratada ou fervida ao longo do dia.</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>🛌</span>
+                <span>Descanse sempre virada para o lado esquerdo para melhorar o fluxo do bebé.</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>👜</span>
+                <span>Mantenha a malinha da maternidade pronta com os documentos e roupinhas.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 3: AJUDAR OUTRA GRÁVIDA (MODO CIDADÃO / VIZINHO)     */}
+      {/* ======================================================== */}
+      {currentTab === 'ajudar' && (
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            border: '1.5px solid #E2E8F0',
+            padding: '26px 22px',
+            boxShadow: '0 8px 16px -2px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div style={{ marginBottom: '20px' }}>
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: '800',
+                backgroundColor: '#ECFDF5',
+                color: '#059669',
+                padding: '4px 10px',
+                borderRadius: '8px',
+              }}
+            >
+              SOLIDARIEDADE COMUNITÁRIA
             </span>
-            <h3 style={{ fontSize: '16px', color: '#F8FAFC', fontWeight: '700' }}>
-              {user.linkedData.nome_completo} ({user.linkedData.idade} anos)
+            <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', marginTop: '6px' }}>
+              Ajudar Uma Grávida em Luanda
             </h3>
-            <p style={{ fontSize: '12px', color: '#94A3B8' }}>
-              Nº de Processo: <strong className="tabular-nums" style={{ color: '#F8FAFC' }}>{user.linkedData.numero_processo}</strong> | Tempo de Gestação:{' '}
-              <strong className="tabular-nums" style={{ color: '#38BDF8' }}>{user.linkedData.semanas_gestacao} semanas</strong>
+            <p style={{ fontSize: '15px', color: '#64748B', marginTop: '4px' }}>
+              Encontrou uma vizinha ou mulher em trabalho de parto na via pública? Chame socorro rápido por aqui.
             </p>
           </div>
 
-          <div style={{ fontSize: '12px', textAlign: 'right' }}>
-            <div>Grupo Sanguíneo: <strong style={{ color: '#EF4444' }}>{user.linkedData.grupo_sanguineo || 'O+'}</strong></div>
-            <div style={{ color: '#94A3B8' }}>Bairro: {user.linkedData.bairro_residencia}</div>
-            {user.linkedData.condicoes_clinicas && user.linkedData.condicoes_clinicas.length > 0 && (
-              <div style={{ color: '#FCD34D', fontWeight: '500', marginTop: '2px' }}>
-                Condições Clínicas: {user.linkedData.condicoes_clinicas.join(', ')}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Canais e Modos de Pedido */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {!isCitizen && (
-          <button
-            onClick={() => setActiveTab('propria')}
-            style={{
-              padding: '13px 22px',
-              borderRadius: '6px',
-              fontSize: '14.5px',
-              fontWeight: '800',
-              backgroundColor: activeTab === 'propria' ? '#DC2626' : '#1E293B',
-              color: '#FFFFFF',
-              border: activeTab === 'propria' ? '1px solid #B91C1C' : '1px solid #334155',
-              boxShadow: activeTab === 'propria' ? '0 4px 6px rgba(220, 38, 38, 0.4)' : 'none',
-              minHeight: '44px',
-            }}
-          >
-            ESTOU A PASSAR MAL — PEDIR AJUDA
-          </button>
-        )}
-
-        <button
-          onClick={() => setActiveTab('outra')}
-          style={{
-            padding: '13px 22px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'outra' ? '#0284C7' : '#1E293B',
-            color: '#FFFFFF',
-            border: activeTab === 'outra' ? '1px solid #0369A1' : '1px solid #334155',
-            minHeight: '44px',
-          }}
-        >
-          PEDIR AJUDA PARA OUTRA PESSOA
-        </button>
-
-        <button
-          onClick={() => setActiveTab('nao_cadastrada')}
-          style={{
-            padding: '13px 22px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'nao_cadastrada' ? '#D97706' : '#1E293B',
-            color: '#FFFFFF',
-            border: activeTab === 'nao_cadastrada' ? '1px solid #B45309' : '1px solid #334155',
-            minHeight: '44px',
-          }}
-        >
-          GRÁVIDA NÃO CADASTRADA — EMERGÊNCIA
-        </button>
-      </div>
-
-      {/* Formulário Principal de Solicitação */}
-      <div
-        style={{
-          backgroundColor: '#0F172A',
-          border: '1px solid #1E293B',
-          borderRadius: '8px',
-          padding: '28px',
-        }}
-      >
-        <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#F8FAFC', marginBottom: '6px' }}>
-          {activeTab === 'propria' && 'Solicitação de Socorro Obstétrico Imediato'}
-          {activeTab === 'outra' && 'Auxílio a Outra Grávida Cadastrada no Sistema'}
-          {activeTab === 'nao_cadastrada' && 'Registo Emergencial de Grávida Sem Cadastro'}
-        </h3>
-        <p style={{ fontSize: '13.5px', color: '#94A3B8', marginBottom: '22px', lineHeight: 1.5 }}>
-          {activeTab === 'outra' && 'Por respeito rigoroso à privacidade médica, o cidadão não visualiza o histórico clínico detalhado da gestante.'}
-          {activeTab === 'nao_cadastrada' && 'O sistema recolhe apenas os dados estritamente necessários para enviar o socorro. O registo clínico integral será feito na maternidade.'}
-          {activeTab === 'propria' && 'Selecione os sintomas observados para orientar a equipa da Central 114.'}
-        </p>
-
-        {/* Se for auxílio para outra: pesquisa */}
-        {activeTab === 'outra' && (
-          <div style={{ marginBottom: '20px', padding: '14px', backgroundColor: '#1E293B', borderRadius: '6px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#38BDF8', marginBottom: '6px' }}>
-              Pesquisar Grávida por Nome ou Nº de Processo Pré-Natal:
-            </label>
-            <input
-              type="text"
-              placeholder="Digite o nome ou processo (ex: Esperança ou GRAV-2026-0814)..."
-              value={searchQuery}
-              onChange={(e) => handleSearchGravida(e.target.value)}
-              style={{ width: '100%', fontSize: '13px', marginBottom: '8px' }}
-            />
-
-            {searchResults.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {searchResults.map((g) => (
-                  <div
-                    key={g.id}
-                    onClick={() => setSelectedGravida(g)}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: selectedGravida?.id === g.id ? '#0369A1' : '#0B1120',
-                      border: '1px solid #334155',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <strong style={{ color: '#F8FAFC' }}>{g.nome_completo}</strong>
-                      <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '8px' }}>
-                        Processo: {g.numero_processo} | Bairro: {g.bairro_residencia}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#38BDF8', fontWeight: '600' }}>
-                      {selectedGravida?.id === g.id ? '✓ Selecionada' : 'Selecionar'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Se for grávida não cadastrada: nome opcional e relação */}
-        {activeTab === 'nao_cadastrada' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-                Nome da Grávida (se conhecido)
+              <label style={{ display: 'block', fontSize: '13.5px', color: '#334155', fontWeight: '700', marginBottom: '4px' }}>
+                Nome da Grávida (se souber, ou escreva 'Desconhecida')
               </label>
               <input
                 type="text"
-                placeholder="Nome ou 'Desconhecido'"
-                value={nomeNaoCadastrada}
-                onChange={(e) => setNomeNaoCadastrada(e.target.value)}
+                placeholder="Ex: Vizinha Maria ou Desconhecida"
+                value={nomeOutra}
+                onChange={(e) => setNomeOutra(e.target.value)}
                 style={{ width: '100%' }}
               />
             </div>
+
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-                Sua Relação com a Grávida
+              <label style={{ display: 'block', fontSize: '13.5px', color: '#334155', fontWeight: '700', marginBottom: '4px' }}>
+                A sua Relação com Ela
               </label>
               <select
-                value={relacaoSolicitante}
-                onChange={(e) => setRelacaoSolicitante(e.target.value)}
+                value={relacaoOutra}
+                onChange={(e) => setRelacaoOutra(e.target.value)}
                 style={{ width: '100%' }}
               >
-                <option value="Vizinho">Vizinho / Morador Próximo</option>
-                <option value="Esposo / Familiar">Esposo / Familiar</option>
-                <option value="Transeunte">Transeunte na via pública</option>
-                <option value="Enfermeiro Comunitário">Agente de Saúde Comunitário</option>
+                <option value="Vizinho">Vizinho / Morador da Área</option>
+                <option value="Familiar">Esposo / Familiar</option>
+                <option value="Transeunte">Pessoa que a encontrou na rua</option>
+                <option value="Agente Comunitário">Agente de Saúde Comunitário</option>
               </select>
             </div>
-          </div>
-        )}
 
-        {/* Sintomas / Situação Observada */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#F8FAFC', marginBottom: '8px' }}>
-            Selecione o que está a acontecer (Sintomas / Sinais de Alerta): *
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
-            {sintomasOpcoes.map((s) => {
-              const isChecked = sintomasSelecionados.includes(s);
-              return (
-                <div
-                  key={s}
-                  onClick={() => handleToggleSintoma(s)}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '6px',
-                    backgroundColor: isChecked ? 'rgba(220, 38, 38, 0.2)' : '#1E293B',
-                    border: isChecked ? '1px solid #DC2626' : '1px solid #334155',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: isChecked ? '600' : '400',
-                    color: isChecked ? '#FCA5A5' : '#E2E8F0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: isChecked ? '#DC2626' : '#64748B' }}>
-                    {isChecked ? '☑' : '☐'}
-                  </span>
-                  <span>{s}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ marginTop: '10px' }}>
-            <input
-              type="text"
-              placeholder="Outras observações importantes sobre o estado da mulher..."
-              value={outrosSintomas}
-              onChange={(e) => setOutrosSintomas(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            />
-          </div>
-        </div>
-
-        {/* Localização e Fallback de GPS */}
-        <div style={{ marginBottom: '20px', backgroundColor: '#1E293B', padding: '16px', borderRadius: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            {/* Sintomas da Grávida */}
             <div>
-              <span style={{ fontSize: '13px', fontWeight: '700', color: '#F8FAFC' }}>
-                Localização Exata da Ocorrência em Luanda
+              <label style={{ display: 'block', fontSize: '13.5px', color: '#334155', fontWeight: '700', marginBottom: '8px' }}>
+                O que ela está a sentir?
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sintomasAmigaveis.map((item) => {
+                  const isChecked = sintomasSelecionados.includes(item.label);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleToggleSintoma(item.label)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        backgroundColor: isChecked ? '#FEF2F2' : '#F8FAFC',
+                        border: isChecked ? '2.5px solid #DC2626' : '1.5px solid #E2E8F0',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ fontSize: '15px', fontWeight: isChecked ? '800' : '600', color: isChecked ? '#991B1B' : '#0F172A' }}>
+                        {item.icon} {item.label}
+                      </span>
+                      <span style={{ color: isChecked ? '#DC2626' : '#94A3B8', fontWeight: '800', fontSize: '16px' }}>
+                        {isChecked ? '✓' : '+'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Localização onde ela está */}
+            <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1.5px solid #E2E8F0' }}>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', display: 'block', marginBottom: '10px' }}>
+                Onde ela está agora? (Luanda)
               </span>
-              <p style={{ fontSize: '11px', color: '#94A3B8' }}>
-                Coordenadas e referências para guiar a equipa de emergência
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <input
+                  type="text"
+                  placeholder="Bairro (ex: Cazenga, Viana, Sambizanga...)"
+                  value={bairro}
+                  onChange={(e) => setBairro(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Ponto de Referência (ex: perto da padaria, da paragem...)"
+                  value={pontoReferencia}
+                  onChange={(e) => setPontoReferencia(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleCaptureGps}
-              style={{
-                backgroundColor: '#0284C7',
-                color: '#FFFFFF',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: '600',
-              }}
-            >
-              Capturar GPS Atual
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Bairro em Luanda *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Tala Hady, Cazenga"
-                value={bairro}
-                onChange={(e) => setBairro(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Rua / Travessa
-              </label>
-              <input
-                type="text"
-                placeholder="Ex: Rua dos Comandos, Beco 12"
-                value={rua}
-                onChange={(e) => setRua(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Ponto de Referência Conhecido (Escola, Hospital, Bomba, Mercado) *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Próximo ao Centro de Saúde do Tala Hady, perto da Esquadra..."
-                value={pontoReferencia}
-                onChange={(e) => setPontoReferencia(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Botão de Envio de Emergência */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-          <div style={{ fontSize: '13.5px', color: '#94A3B8' }}>
-            Contacto do Solicitante: <strong style={{ color: '#F8FAFC' }}>{telefoneContato}</strong>
           </div>
 
           <button
-            onClick={() => handleSubmitEmergency(activeTab)}
+            type="button"
+            onClick={() => handleSubmitSocorro(true)}
             disabled={requesting}
             style={{
-              padding: '14px 32px',
-              borderRadius: '6px',
-              backgroundColor: '#DC2626',
+              width: '100%',
+              backgroundColor: '#059669',
               color: '#FFFFFF',
-              fontSize: '15px',
+              padding: '18px',
+              borderRadius: '14px',
+              fontSize: '17px',
               fontWeight: '800',
-              letterSpacing: '0.04em',
-              border: '1px solid #B91C1C',
-              boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.4)',
-              minHeight: '48px',
+              border: 'none',
             }}
           >
-            {requesting ? 'A enviar socorro...' : 'CONFIRMAR E ENVIAR PEDIDO DE AJUDA'}
+            {requesting ? 'A Enviar Pedido...' : 'ENVIAR SOCORRO PARA ESTA PESSOA'}
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

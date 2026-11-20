@@ -81,7 +81,6 @@ export const SupervisorDashboard = () => {
     }
   };
 
-  // Ocorrências que demandam atenção urgente do supervisor
   const activeL1 = occurrences.filter((o) => o.prioridade === 'Nível 1 - Vermelho' && o.estado_ocorrencia !== 'Concluída' && o.estado_ocorrencia !== 'Cancelada');
   const unassigned = occurrences.filter((o) => !o.ambulancia_id && o.estado_ocorrencia !== 'Concluída' && o.estado_ocorrencia !== 'Cancelada');
   const difficultAccessCases = occurrences.filter((o) => o.classificacao_acesso_local === 'Acesso impossível para ambulância convencional');
@@ -96,22 +95,23 @@ export const SupervisorDashboard = () => {
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#0F172A',
-          border: '1px solid #1E293B',
-          borderRadius: '8px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: '12px',
           padding: '18px 24px',
           marginBottom: '24px',
           gap: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div>
-          <span style={{ fontSize: '12px', color: '#F59E0B', fontWeight: '700', letterSpacing: '0.04em' }}>
+          <span style={{ fontSize: '11px', color: '#D97706', fontWeight: '800', letterSpacing: '0.04em' }}>
             SALA DE SITUAÇÃO E SUPERVISÃO REGULATÓRIA
           </span>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#F8FAFC', marginTop: '2px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
             Dr. Rui Kapapelo — Supervisor Chefe de Turno
           </h2>
-          <p style={{ fontSize: '13.5px', color: '#94A3B8', marginTop: '3px' }}>
+          <p style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>
             Monitoramento de sobrecarga, tempos de resposta, vias degradadas em Luanda e auditoria de chamados
           </p>
         </div>
@@ -120,73 +120,73 @@ export const SupervisorDashboard = () => {
           <button
             onClick={loadData}
             style={{
-              padding: '10px 18px',
-              borderRadius: '6px',
-              backgroundColor: '#1E293B',
-              color: '#38BDF8',
-              fontSize: '13.5px',
-              fontWeight: '600',
-              border: '1px solid #334155',
-              minHeight: '38px',
+              padding: '9px 16px',
+              borderRadius: '8px',
+              backgroundColor: '#F0F9FF',
+              color: '#0284C7',
+              fontSize: '13px',
+              fontWeight: '700',
+              border: '1px solid #BAE6FD',
+              cursor: 'pointer',
             }}
           >
-            Sincronizar Indicadores
+            ↻ Sincronizar Indicadores
           </button>
         </div>
       </div>
 
       {/* KPI Cards Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px 20px' }}>
-          <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.03em' }}>EMERGÊNCIAS CRÍTICAS (L1)</div>
-          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: '#EF4444', marginTop: '6px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>EMERGÊNCIAS CRÍTICAS (L1)</div>
+          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: '#DC2626', marginTop: '4px' }}>
             {activeL1.length}
           </div>
-          <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>Prioridade máxima ativa</div>
+          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Prioridade máxima ativa</div>
         </div>
 
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px 20px' }}>
-          <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.03em' }}>SEM EQUIPA ATRIBUÍDA</div>
-          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: unassigned.length > 0 ? '#F59E0B' : '#10B981', marginTop: '6px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>SEM EQUIPA ATRIBUÍDA</div>
+          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: unassigned.length > 0 ? '#D97706' : '#059669', marginTop: '4px' }}>
             {unassigned.length}
           </div>
-          <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>Aguardando despacho</div>
+          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Aguardando despacho</div>
         </div>
 
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px 20px' }}>
-          <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.03em' }}>VIAS COM ACESSO IMPOSSÍVEL</div>
-          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: difficultAccessCases.length > 0 ? '#EF4444' : '#10B981', marginTop: '6px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>VIAS COM ACESSO IMPOSSÍVEL</div>
+          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: difficultAccessCases.length > 0 ? '#DC2626' : '#059669', marginTop: '4px' }}>
             {difficultAccessCases.length}
           </div>
-          <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>Exigem ponto de encontro</div>
+          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Exigem ponto de encontro</div>
         </div>
 
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px 20px' }}>
-          <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.03em' }}>REVISÃO HUMANA (TROTES)</div>
-          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: suspiciousCases.length > 0 ? '#F59E0B' : '#38BDF8', marginTop: '6px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>REVISÃO HUMANA (TROTES)</div>
+          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: suspiciousCases.length > 0 ? '#D97706' : '#0284C7', marginTop: '4px' }}>
             {suspiciousCases.length}
           </div>
-          <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>Pendentes de parecer</div>
+          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Pendentes de parecer</div>
         </div>
 
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px 20px' }}>
-          <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.03em' }}>TEMPO MÉDIO RESPOSTA</div>
-          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: '#38BDF8', marginTop: '6px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '700' }}>TEMPO MÉDIO RESPOSTA</div>
+          <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: '#0284C7', marginTop: '4px' }}>
             {kpis?.tempos_medios_minutos?.media_minutos_primeira_resposta || '4.2'} min
           </div>
-          <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>Entre pedido e triagem</div>
+          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Entre pedido e triagem</div>
         </div>
       </div>
 
       {/* Grid Central: Vias / Sobrecarga + Fila de Revisão de Trotes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 1.25fr) minmax(360px, 1fr)', gap: '22px', marginBottom: '26px' }}>
         {/* Mapa Operacional e Vias Críticas em Luanda */}
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '20px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-            <h3 style={{ fontSize: '15.5px', fontWeight: '700', color: '#F8FAFC' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
               Mapa de Cobertura e Acessibilidade Viária em Luanda
             </h3>
-            <span style={{ fontSize: '12.5px', color: '#94A3B8' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748B' }}>
               Maternidades: {maternities.length} | Ambulâncias: {ambulances.length}
             </span>
           </div>
@@ -199,7 +199,7 @@ export const SupervisorDashboard = () => {
           />
 
           <div style={{ marginTop: '16px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#38BDF8', marginBottom: '8px' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0284C7', marginBottom: '8px' }}>
               Zonas Vulneráveis com Limitação Viária Registada:
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
@@ -209,9 +209,10 @@ export const SupervisorDashboard = () => {
                   <div
                     key={z.id}
                     style={{
-                      backgroundColor: '#1E293B',
+                      backgroundColor: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
                       padding: '10px 14px',
-                      borderRadius: '5px',
+                      borderRadius: '8px',
                       fontSize: '12.5px',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -220,8 +221,8 @@ export const SupervisorDashboard = () => {
                     }}
                   >
                     <div>
-                      <strong style={{ color: '#F8FAFC' }}>{z.nome_zona}</strong>
-                      <div style={{ color: '#94A3B8', marginTop: '2px' }}>{z.descricao_condicoes}</div>
+                      <strong style={{ color: '#0F172A' }}>{z.nome_zona}</strong>
+                      <div style={{ color: '#64748B', marginTop: '2px' }}>{z.descricao_condicoes}</div>
                     </div>
                     <RoadAccessibilityBadge classificacao={z.classificacao_acesso} />
                   </div>
@@ -233,18 +234,18 @@ export const SupervisorDashboard = () => {
         {/* Coluna Direita: Fila de Revisão Humana de Trotes / Suspeitas + Escala de Operadores */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {/* Fila de Trotes / Pedidos Suspeitos */}
-          <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '20px' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F8FAFC' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
                 Fila de Revisão Humana de Chamados Suspeitos ({suspiciousCases.length})
               </h3>
-              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: '700' }}>
+              <span style={{ fontSize: '11px', color: '#DC2626', fontWeight: '800', backgroundColor: '#FEF2F2', padding: '3px 8px', borderRadius: '4px' }}>
                 SEM BLOQUEIO AUTOMÁTICO
               </span>
             </div>
 
             {suspiciousCases.length === 0 ? (
-              <p style={{ fontSize: '12px', color: '#64748B', padding: '14px 0' }}>
+              <p style={{ fontSize: '12.5px', color: '#64748B', padding: '14px 0' }}>
                 Nenhuma ocorrência sob suspeita de inconsistência pendente de parecer.
               </p>
             ) : (
@@ -253,36 +254,36 @@ export const SupervisorDashboard = () => {
                   <div
                     key={sc.id}
                     style={{
-                      backgroundColor: '#1E293B',
-                      border: '1px solid #7F1D1D',
-                      borderRadius: '6px',
-                      padding: '12px',
+                      backgroundColor: '#FFFBEB',
+                      border: '1px solid #FDE68A',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <strong style={{ color: '#F8FAFC' }}>{sc.protocolo_codigo}</strong>
-                      <span style={{ fontSize: '11px', color: '#FCA5A5' }}>{sc.solicitante_telefone}</span>
+                      <strong style={{ color: '#0F172A' }}>{sc.protocolo_codigo}</strong>
+                      <span style={{ fontSize: '11.5px', color: '#B45309', fontWeight: '600' }}>{sc.solicitante_telefone}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#E2E8F0', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '6px' }}>
                       Motivo apontado: <em>"{sc.motivo_suspeita}"</em>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '11.5px', color: '#64748B', marginBottom: '8px' }}>
                       Zona: {sc.bairro} ({sc.ponto_referencia})
                     </div>
 
                     {selectedSuspicious?.id === sc.id ? (
-                      <div style={{ marginTop: '8px', borderTop: '1px solid #334155', paddingTop: '8px' }}>
+                      <div style={{ marginTop: '8px', borderTop: '1px solid #FDE68A', paddingTop: '8px' }}>
                         <textarea
                           rows={2}
                           placeholder="Parecer técnico fundamentado do supervisor..."
                           value={supervisorParecer}
                           onChange={(e) => setSupervisorParecer(e.target.value)}
-                          style={{ width: '100%', fontSize: '12px', marginBottom: '8px' }}
+                          style={{ width: '100%', fontSize: '12.5px', marginBottom: '8px' }}
                         />
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                           <button
                             onClick={() => setSelectedSuspicious(null)}
-                            style={{ padding: '4px 10px', fontSize: '11px', color: '#94A3B8' }}
+                            style={{ padding: '4px 10px', fontSize: '12px', color: '#64748B' }}
                           >
                             Fechar
                           </button>
@@ -292,9 +293,9 @@ export const SupervisorDashboard = () => {
                             style={{
                               backgroundColor: '#DC2626',
                               color: '#FFFFFF',
-                              padding: '4px 12px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
                               fontWeight: '700',
                             }}
                           >
@@ -306,9 +307,9 @@ export const SupervisorDashboard = () => {
                             style={{
                               backgroundColor: '#059669',
                               color: '#FFFFFF',
-                              padding: '4px 12px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
                               fontWeight: '700',
                             }}
                           >
@@ -323,12 +324,12 @@ export const SupervisorDashboard = () => {
                           setSupervisorParecer('');
                         }}
                         style={{
-                          backgroundColor: '#B45309',
+                          backgroundColor: '#D97706',
                           color: '#FFFFFF',
-                          padding: '4px 10px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: '600',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '700',
                         }}
                       >
                         Avaliar Chamado
@@ -341,8 +342,8 @@ export const SupervisorDashboard = () => {
           </div>
 
           {/* Escala de Operadores (Turnos) */}
-          <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#F8FAFC', marginBottom: '10px' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A', marginBottom: '10px' }}>
               Escala de 3 Turnos dos Operadores da Central
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -350,9 +351,10 @@ export const SupervisorDashboard = () => {
                 <div
                   key={s.id}
                   style={{
-                    backgroundColor: '#1E293B',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
                     padding: '8px 12px',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
                     fontSize: '12px',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -360,23 +362,23 @@ export const SupervisorDashboard = () => {
                   }}
                 >
                   <div>
-                    <strong style={{ color: '#F8FAFC' }}>{s.operador_nome}</strong>
-                    <div style={{ fontSize: '11px', color: '#94A3B8' }}>{s.turno}</div>
+                    <strong style={{ color: '#0F172A' }}>{s.operador_nome}</strong>
+                    <div style={{ fontSize: '11px', color: '#64748B' }}>{s.turno}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span
                       style={{
                         padding: '2px 6px',
                         borderRadius: '3px',
-                        fontSize: '10px',
+                        fontSize: '10.5px',
                         fontWeight: '700',
-                        backgroundColor: s.status_operador === 'Disponível' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(217, 119, 6, 0.2)',
-                        color: s.status_operador === 'Disponível' ? '#34D399' : '#FBBF24',
+                        backgroundColor: s.status_operador === 'Disponível' ? '#ECFDF5' : '#FFFBEB',
+                        color: s.status_operador === 'Disponível' ? '#059669' : '#D97706',
                       }}
                     >
                       {s.status_operador}
                     </span>
-                    <div className="tabular-nums" style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
+                    <div className="tabular-nums" style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
                       {s.total_atendimentos_turno} atendimentos
                     </div>
                   </div>

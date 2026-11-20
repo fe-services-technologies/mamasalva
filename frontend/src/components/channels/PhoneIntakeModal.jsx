@@ -54,9 +54,31 @@ export const PhoneIntakeModal = ({ isOpen, onClose, onCreated }) => {
 
     setLoading(true);
     try {
-      await api.createPhoneIntake(formData);
-      if (onCreated) onCreated();
-      onClose();
+      const payload = {
+        canal_entrada: 'Linha Telefónica 114',
+        solicitante_nome: formData.solicitante_nome || 'Chamador Telefónico 114',
+        solicitante_telefone: formData.solicitante_telefone,
+        tipo_solicitante: formData.gravida_cadastrada ? 'propria_gravida' : 'cidadao_desconhecido',
+        relacao_gravida: 'Atendimento Telefónico Central',
+        gravida_cadastrada: formData.gravida_cadastrada,
+        descricao_sintomas: formData.descricao_sintomas,
+        sinais_alerta: formData.sinais_alerta,
+        municipio: formData.municipio,
+        bairro: formData.bairro,
+        rua: formData.rua,
+        ponto_referencia: formData.ponto_referencia,
+        latitude: -8.8105,
+        longitude: 13.2750,
+        origem_coordenadas: 'Registo Telefónico Central',
+        observacoes_iniciais: formData.observacoes_chamada,
+        prioridade: formData.prioridade_atribuida,
+      };
+
+      const res = await api.createOccurrence(payload);
+      if (res.success) {
+        if (onCreated) onCreated(res.ocorrencia);
+        onClose();
+      }
     } catch (err) {
       setError(err.message || 'Falha ao registar chamada telefónica.');
     } finally {
@@ -68,21 +90,33 @@ export const PhoneIntakeModal = ({ isOpen, onClose, onCreated }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registo Rápido de Chamada Telefónica (Linha 114)"
-      subtitle="Formulário verbal direto para operador da central de atendimento durante a chamada"
-      maxWidth="680px"
+      title="Atendimento Telefónico da Central 114"
+      subtitle="Registo rápido de chamada de emergência obstétrica recebida pelo operador de Luanda"
+      maxWidth="720px"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {error && (
-          <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.2)', border: '1px solid #DC2626', color: '#FCA5A5', padding: '8px 12px', borderRadius: '4px', fontSize: '13px' }}>
-            {error}
+          <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '10px 14px', borderRadius: '6px', fontSize: '13px' }}>
+            ⚠️ {error}
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Telefone do Solicitante / Grávida *
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+              Nome do Solicitante / Grávida
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: Teresa Sebastião"
+              value={formData.solicitante_nome}
+              onChange={(e) => setFormData({ ...formData, solicitante_nome: e.target.value })}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+              Telefone de Contacto *
             </label>
             <input
               type="text"
@@ -93,144 +127,101 @@ export const PhoneIntakeModal = ({ isOpen, onClose, onCreated }) => {
               style={{ width: '100%' }}
             />
           </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Nome do Interveniente / Quem Liga
-            </label>
-            <input
-              type="text"
-              placeholder="Nome do solicitante ou grávida"
-              value={formData.solicitante_nome}
-              onChange={(e) => setFormData({ ...formData, solicitante_nome: e.target.value })}
-              style={{ width: '100%' }}
-            />
-          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Município de Luanda *
-            </label>
-            <select
-              value={formData.municipio}
-              onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
-              style={{ width: '100%' }}
-            >
-              <option value="Luanda">Luanda (Sede)</option>
-              <option value="Cazenga">Cazenga</option>
-              <option value="Viana">Viana</option>
-              <option value="Cacuaco">Cacuaco</option>
-              <option value="Kilamba Kiaxi">Kilamba Kiaxi</option>
-              <option value="Sambizanga">Sambizanga</option>
-              <option value="Maianga">Maianga</option>
-              <option value="Rangel">Rangel</option>
-              <option value="Belas">Belas</option>
-            </select>
+        {/* Localização em Luanda */}
+        <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '10px' }}>
+            Localização Informada pelo Chamador (Luanda):
+          </span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+                Bairro em Luanda *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: Tala Hady, Cazenga"
+                value={formData.bairro}
+                onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+                Rua / Zona
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Rua dos Comandos"
+                value={formData.rua}
+                onChange={(e) => setFormData({ ...formData, rua: e.target.value })}
+                style={{ width: '100%' }}
+              />
+            </div>
           </div>
-
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Bairro / Zona *
+            <label style={{ display: 'block', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+              Ponto de Referência Conhecido (Crucial para socorro em Luanda) *
             </label>
             <input
               type="text"
               required
-              placeholder="Ex: Tala Hady, Estalagem, Palanca..."
-              value={formData.bairro}
-              onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+              placeholder="Ex: Próximo à Escola Primária ou Paragem de Táxis"
+              value={formData.ponto_referencia}
+              onChange={(e) => setFormData({ ...formData, ponto_referencia: e.target.value })}
               style={{ width: '100%' }}
             />
           </div>
         </div>
 
+        {/* Sinais de Alerta */}
         <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-            Ponto de Referência Local e Rua *
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>
+            Sinais de Alerta Informados na Chamada:
           </label>
-          <input
-            type="text"
-            required
-            placeholder="Ex: Próximo à bomba Sonangol, atrás da escola 1024, travessa 3..."
-            value={formData.ponto_referencia}
-            onChange={(e) => setFormData({ ...formData, ponto_referencia: e.target.value })}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-            Descrição da Emergência e Sintomas Observados *
-          </label>
-          <textarea
-            required
-            rows={2}
-            placeholder="Descreva o que o utente está a relatar pelo telefone..."
-            value={formData.descricao_sintomas}
-            onChange={(e) => setFormData({ ...formData, descricao_sintomas: e.target.value })}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '6px' }}>
-            Sinais de Alerta Obstétrico Identificados:
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {alertOptions.map((opt) => {
-              const isChecked = formData.sinais_alerta.includes(opt);
+              const checked = formData.sinais_alerta.includes(opt);
               return (
-                <button
-                  type="button"
+                <div
                   key={opt}
                   onClick={() => handleToggleAlert(opt)}
                   style={{
-                    textAlign: 'left',
-                    padding: '6px 10px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: isChecked ? '600' : '400',
-                    backgroundColor: isChecked ? 'rgba(220, 38, 38, 0.25)' : '#1E293B',
-                    color: isChecked ? '#FCA5A5' : '#CBD5E1',
-                    border: isChecked ? '1px solid #DC2626' : '1px solid #334155',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    backgroundColor: checked ? '#FEF2F2' : '#FFFFFF',
+                    border: checked ? '1px solid #DC2626' : '1px solid #CBD5E1',
+                    color: checked ? '#991B1B' : '#334155',
+                    fontSize: '12px',
+                    fontWeight: checked ? '700' : '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  {isChecked ? '☑ ' : '☐ '} {opt}
-                </button>
+                  <span>{checked ? '☑' : '☐'}</span>
+                  <span>{opt}</span>
+                </div>
               );
             })}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Validação Imediata de Prioridade
-            </label>
-            <select
-              value={formData.prioridade_atribuida}
-              onChange={(e) => setFormData({ ...formData, prioridade_atribuida: e.target.value })}
-              style={{ width: '100%' }}
-            >
-              <option value="Nível 1 - Vermelho">Nível 1 — Vermelho (Crítico / Imediato)</option>
-              <option value="Nível 2 - Amarelo">Nível 2 — Amarelo (Urgente)</option>
-              <option value="Nível 3 - Verde">Nível 3 — Verde (Não Crítico)</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
-              Nº de Processo Pré-Natal (se tiver)
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: GRAV-2026-..."
-              value={formData.numero_processo}
-              onChange={(e) => setFormData({ ...formData, numero_processo: e.target.value })}
-              style={{ width: '100%' }}
-            />
-          </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+            Descrição Clínica dos Sintomas / Relato do Chamador *
+          </label>
+          <textarea
+            required
+            rows={3}
+            placeholder="Descreva o que a pessoa relata, tempo de sangramento ou dores..."
+            value={formData.descricao_sintomas}
+            onChange={(e) => setFormData({ ...formData, descricao_sintomas: e.target.value })}
+            style={{ width: '100%' }}
+          />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
@@ -238,10 +229,10 @@ export const PhoneIntakeModal = ({ isOpen, onClose, onCreated }) => {
             type="button"
             onClick={onClose}
             style={{
-              padding: '8px 16px',
+              padding: '10px 18px',
+              backgroundColor: '#F1F5F9',
+              color: '#475569',
               borderRadius: '6px',
-              backgroundColor: '#1E293B',
-              color: '#94A3B8',
               fontSize: '13px',
               fontWeight: '600',
             }}
@@ -252,16 +243,15 @@ export const PhoneIntakeModal = ({ isOpen, onClose, onCreated }) => {
             type="submit"
             disabled={loading}
             style={{
-              padding: '8px 18px',
-              borderRadius: '6px',
+              padding: '10px 22px',
               backgroundColor: '#DC2626',
               color: '#FFFFFF',
-              fontSize: '13px',
+              borderRadius: '6px',
+              fontSize: '13.5px',
               fontWeight: '700',
-              border: '1px solid #B91C1C',
             }}
           >
-            {loading ? 'A registar...' : 'Registar Ocorrência Telefónica 114'}
+            {loading ? 'A registar...' : 'Registar Ocorrência 114'}
           </button>
         </div>
       </form>

@@ -28,7 +28,6 @@ export const MaternityDashboard = () => {
     try {
       const matRes = await api.getMaternities();
       if (matRes.success && matRes.maternidades.length > 0) {
-        // Encontra a maternidade vinculada ao utilizador logado ou a primeira
         const myMat = matRes.maternidades.find((m) => m.user_id === user.id) || matRes.maternidades[0];
         setMaternity(myMat);
         setCamasLivres(myMat.camas_obstetricas_livres);
@@ -37,7 +36,6 @@ export const MaternityDashboard = () => {
         setNeonatologiaAtiva(myMat.neonatologia_ativa);
         setEstadoFuncionamento(myMat.estado_funcionamento);
 
-        // Buscar ocorrências vinculadas à maternidade
         const ocRes = await api.getOccurrences();
         if (ocRes.success) {
           const incoming = ocRes.ocorrencias.filter((o) => o.maternidade_destino_id === myMat.id);
@@ -63,7 +61,7 @@ export const MaternityDashboard = () => {
       unsubUpdated();
       unsubConfirmed();
     };
-  }, [user]);
+  }, []);
 
   const handleUpdateCapacity = async () => {
     if (!maternity) return;
@@ -76,7 +74,7 @@ export const MaternityDashboard = () => {
         neonatologia_ativa: neonatologiaAtiva,
         estado_funcionamento: estadoFuncionamento,
       });
-      alert('Capacidade operacional atualizada e transmitida à Central de Coordenação.');
+      alert('Capacidade e prontidão hospitalar atualizadas e transmitidas à Central 114!');
       loadData();
     } catch (err) {
       alert(`Erro: ${err.message}`);
@@ -94,10 +92,9 @@ export const MaternityDashboard = () => {
         responsavel_recepcao: responsavelRecepcao,
         observacoes_admissao: observacoesAdmissao,
       });
-
-      alert(`Recepção formal confirmada para a gestante. Viatura desmobilizada e ciclo concluído.`);
+      alert(`Recepção da utente ${selectedOccurrence.protocolo_codigo} confirmada com sucesso!`);
       setSelectedOccurrence(null);
-      setReceptionModalOpen(false);
+      setObservacoesAdmissao('');
       loadData();
     } catch (err) {
       alert(`Erro: ${err.message}`);
@@ -105,52 +102,52 @@ export const MaternityDashboard = () => {
   };
 
   if (!maternity) {
-    return <div style={{ padding: '32px', textAlign: 'center', color: '#94A3B8' }}>A carregar dados da maternidade...</div>;
+    return <div style={{ padding: '32px', textAlign: 'center', color: '#64748B' }}>A carregar dados da maternidade...</div>;
   }
 
-  const arrivingCases = incomingOccurrences.filter((o) => !o.maternidade_confirmou_recepcao && o.estado_ocorrencia !== 'Cancelada');
+  const arrivingCases = incomingOccurrences.filter((o) => o.estado_ocorrencia !== 'Concluída' && o.estado_ocorrencia !== 'Cancelada');
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '20px 24px' }}>
-      {/* Header da Maternidade */}
+    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px 28px' }}>
+      {/* Header Hospitalar */}
       <div
         style={{
-          backgroundColor: '#0F172A',
-          border: '1px solid #1E293B',
-          borderRadius: '8px',
-          padding: '16px 20px',
-          marginBottom: '20px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: '12px',
+          padding: '18px 24px',
+          marginBottom: '24px',
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div>
-          <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '700', letterSpacing: '0.04em' }}>
-            UNIDADE HOSPITALAR OBSTÉTRICA
+          <span style={{ fontSize: '11px', color: '#059669', fontWeight: '800', letterSpacing: '0.04em' }}>
+            REDE HOSPITALAR MATERNA DE LUANDA
           </span>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#F8FAFC' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
             {maternity.nome} ({maternity.sigla})
           </h2>
-          <div style={{ fontSize: '12px', color: '#94A3B8' }}>
-            Município: {maternity.municipio} ({maternity.bairro}) | Linha de Emergência:{' '}
-            <strong style={{ color: '#F8FAFC' }}>{maternity.telefone_emergencia}</strong>
+          <div style={{ fontSize: '13px', color: '#64748B', marginTop: '3px' }}>
+            Município: {maternity.municipio} • Bairro: {maternity.bairro} | Nível: {maternity.nivel_atencao}
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#94A3B8' }}>Estado de Funcionamento:</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#64748B' }}>Prontidão da Unidade:</span>
           <span
             style={{
-              padding: '4px 10px',
+              padding: '6px 14px',
               borderRadius: '6px',
-              fontSize: '12px',
+              fontSize: '13.5px',
               fontWeight: '700',
-              backgroundColor: estadoFuncionamento === 'Normal' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-              color: estadoFuncionamento === 'Normal' ? '#34D399' : '#FCA5A5',
-              border: '1px solid currentColor',
+              backgroundColor: estadoFuncionamento === 'Normal' ? '#ECFDF5' : '#FEF2F2',
+              color: estadoFuncionamento === 'Normal' ? '#047857' : '#DC2626',
+              border: estadoFuncionamento === 'Normal' ? '1px solid #A7F3D0' : '1px solid #FECACA',
             }}
           >
             {estadoFuncionamento}
@@ -158,14 +155,14 @@ export const MaternityDashboard = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '22px' }}>
         {/* Coluna Esquerda: Notificações de Chegada Iminente */}
-        <div style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '16px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F8FAFC' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
               Notificações de Chegada Iminente / Transferências ({arrivingCases.length})
             </h3>
-            <span style={{ fontSize: '11px', color: '#38BDF8' }}>Aviso prévio via Central 114</span>
+            <span style={{ fontSize: '12px', color: '#0284C7', fontWeight: '600' }}>Aviso prévio via Central 114</span>
           </div>
 
           {arrivingCases.length === 0 ? (
@@ -178,18 +175,18 @@ export const MaternityDashboard = () => {
                 <div
                   key={oc.id}
                   style={{
-                    backgroundColor: '#1E293B',
-                    border: '1px solid #334155',
-                    borderRadius: '8px',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '10px',
                     padding: '16px',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div>
-                      <span className="tabular-nums" style={{ fontSize: '14px', fontWeight: '800', color: '#F8FAFC' }}>
+                      <span className="tabular-nums" style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A' }}>
                         {oc.protocolo_codigo}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#94A3B8', marginLeft: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#64748B', marginLeft: '8px' }}>
                         Origem: {oc.bairro}
                       </span>
                     </div>
@@ -201,28 +198,23 @@ export const MaternityDashboard = () => {
 
                   <LifecycleStepTracker etapaAtual={oc.etapa_atual} estado={oc.estado_ocorrencia} />
 
-                  {/* Resumo Clínico Autorizado */}
-                  <div style={{ backgroundColor: '#0B1120', padding: '10px 12px', borderRadius: '6px', margin: '10px 0', fontSize: '12px' }}>
-                    <div style={{ fontWeight: '700', color: '#38BDF8', marginBottom: '4px' }}>
+                  {/* Resumo Clínico */}
+                  <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', padding: '10px 12px', borderRadius: '8px', margin: '10px 0', fontSize: '12.5px' }}>
+                    <div style={{ fontWeight: '700', color: '#0284C7', marginBottom: '4px' }}>
                       Identificação & Dados Clínicos Obstétricos:
                     </div>
-                    <div style={{ color: '#F8FAFC' }}>
-                      Paciente: <strong>{oc.gravida_nome || oc.solicitante_nome}</strong>
-                      {oc.gravida_semanas && ` | Idade Gestacional: ${oc.gravida_semanas} semanas`}
+                    <div style={{ color: '#0F172A', fontWeight: '600' }}>
+                      Paciente: {oc.gravida_nome || oc.solicitante_nome}
+                      {oc.gravida_semanas && ` | Gestação: ${oc.gravida_semanas} semanas`}
                       {oc.grupo_sanguineo && ` | Sangue: ${oc.grupo_sanguineo}`}
                     </div>
-                    <div style={{ color: '#E2E8F0', marginTop: '4px' }}>
+                    <div style={{ color: '#334155', marginTop: '4px' }}>
                       Sintomas: {oc.descricao_sintomas}
                     </div>
-                    {oc.condicoes_clinicas && oc.condicoes_clinicas.length > 0 && (
-                      <div style={{ color: '#FCD34D', marginTop: '2px' }}>
-                        Antecedentes: {oc.condicoes_clinicas.join(', ')}
-                      </div>
-                    )}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#94A3B8' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>
                       Viatura: <strong>{oc.ambulancia_codigo || 'Em trânsito'}</strong> ({oc.ambulancia_instituicao || 'INEMA'})
                     </span>
 
@@ -238,7 +230,6 @@ export const MaternityDashboard = () => {
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: '700',
-                        border: '1px solid #10B981',
                       }}
                     >
                       CONFIRMAR RECEPÇÃO DA GRÁVIDA
@@ -253,43 +244,44 @@ export const MaternityDashboard = () => {
         {/* Coluna Direita: Gestão de Capacidade Operacional */}
         <div
           style={{
-            backgroundColor: '#0F172A',
-            border: '1px solid #1E293B',
-            borderRadius: '8px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '12px',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}
         >
-          <div style={{ borderBottom: '1px solid #1E293B', paddingBottom: '10px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F8FAFC' }}>
+          <div style={{ borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
               Gestão de Capacidade em Tempo Real
             </h3>
-            <p style={{ fontSize: '11px', color: '#94A3B8' }}>
-              Estes valores sincronizam instantaneamente a Central 114 para evitar encaminhamentos a maternidades lotadas
+            <p style={{ fontSize: '12px', color: '#64748B' }}>
+              Valores sincronizados instantaneamente com a Central 114
             </p>
           </div>
 
           {/* Camas Obstétricas Livres */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#F8FAFC' }}>Camas Obstétricas Livres</div>
-              <div style={{ fontSize: '11px', color: '#94A3B8' }}>Total cadastrado: {maternity.camas_totais}</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Camas Obstétricas Livres</div>
+              <div style={{ fontSize: '11.5px', color: '#64748B' }}>Total: {maternity.camas_totais}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 onClick={() => setCamasLivres(Math.max(0, camasLivres - 1))}
-                style={{ backgroundColor: '#0B1120', color: '#FFFFFF', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
+                style={{ backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
               >
                 -
               </button>
-              <span className="tabular-nums" style={{ fontSize: '16px', fontWeight: '800', color: '#10B981', minWidth: '30px', textAlign: 'center' }}>
+              <span className="tabular-nums" style={{ fontSize: '17px', fontWeight: '800', color: '#059669', minWidth: '30px', textAlign: 'center' }}>
                 {camasLivres}
               </span>
               <button
                 onClick={() => setCamasLivres(camasLivres + 1)}
-                style={{ backgroundColor: '#0B1120', color: '#FFFFFF', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
+                style={{ backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
               >
                 +
               </button>
@@ -297,77 +289,77 @@ export const MaternityDashboard = () => {
           </div>
 
           {/* Salas de Parto Ativas */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#F8FAFC' }}>Salas de Parto Operacionais</div>
-              <div style={{ fontSize: '11px', color: '#94A3B8' }}>Disponíveis para partos normais</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Salas de Parto Operacionais</div>
+              <div style={{ fontSize: '11.5px', color: '#64748B' }}>Disponíveis para partos normais</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 onClick={() => setSalasParto(Math.max(0, salasParto - 1))}
-                style={{ backgroundColor: '#0B1120', color: '#FFFFFF', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
+                style={{ backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
               >
                 -
               </button>
-              <span className="tabular-nums" style={{ fontSize: '16px', fontWeight: '800', color: '#38BDF8', minWidth: '30px', textAlign: 'center' }}>
+              <span className="tabular-nums" style={{ fontSize: '17px', fontWeight: '800', color: '#0284C7', minWidth: '30px', textAlign: 'center' }}>
                 {salasParto}
               </span>
               <button
                 onClick={() => setSalasParto(salasParto + 1)}
-                style={{ backgroundColor: '#0B1120', color: '#FFFFFF', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
+                style={{ backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', width: '28px', height: '28px', borderRadius: '4px', fontSize: '14px', fontWeight: '700' }}
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* Bloco Operatório para Cesarianas */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
+          {/* Bloco Operatório */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#F8FAFC' }}>Bloco Operatório (Cesarianas)</div>
-              <div style={{ fontSize: '11px', color: '#94A3B8' }}>Cirurgia obstétrica de urgência</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Bloco Operatório (Cesarianas)</div>
+              <div style={{ fontSize: '11.5px', color: '#64748B' }}>Cirurgia obstétrica de urgência</div>
             </div>
             <button
               onClick={() => setBlocoDisponivel(!blocoDisponivel)}
               style={{
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '11px',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
                 fontWeight: '700',
-                backgroundColor: blocoDisponivel ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                color: blocoDisponivel ? '#34D399' : '#FCA5A5',
-                border: '1px solid currentColor',
+                backgroundColor: blocoDisponivel ? '#ECFDF5' : '#FEF2F2',
+                color: blocoDisponivel ? '#047857' : '#DC2626',
+                border: blocoDisponivel ? '1px solid #A7F3D0' : '1px solid #FECACA',
               }}
             >
-              {blocoDisponivel ? '✓ Disponível' : '✕ Ocupado / Indisponível'}
+              {blocoDisponivel ? '✓ Disponível' : '✕ Ocupado'}
             </button>
           </div>
 
-          {/* Neonatologia / UTI Neonatal */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E293B', padding: '12px', borderRadius: '6px' }}>
+          {/* Neonatologia */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#F8FAFC' }}>Unidade Neonatal (Incubadoras)</div>
-              <div style={{ fontSize: '11px', color: '#94A3B8' }}>Prematuridade e cuidados especiais</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Unidade Neonatal (Incubadoras)</div>
+              <div style={{ fontSize: '11.5px', color: '#64748B' }}>Prematuridade e cuidados especiais</div>
             </div>
             <button
               onClick={() => setNeonatologiaAtiva(!neonatologiaAtiva)}
               style={{
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '11px',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
                 fontWeight: '700',
-                backgroundColor: neonatologiaAtiva ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                color: neonatologiaAtiva ? '#34D399' : '#FCA5A5',
-                border: '1px solid currentColor',
+                backgroundColor: neonatologiaAtiva ? '#ECFDF5' : '#FEF2F2',
+                color: neonatologiaAtiva ? '#047857' : '#DC2626',
+                border: neonatologiaAtiva ? '1px solid #A7F3D0' : '1px solid #FECACA',
               }}
             >
-              {neonatologiaAtiva ? '✓ Ativa' : '✕ Restrita / Sem Vagas'}
+              {neonatologiaAtiva ? '✓ Ativa' : '✕ Restrita'}
             </button>
           </div>
 
-          {/* Estado Geral de Funcionamento */}
+          {/* Estado de Funcionamento */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '12.5px', color: '#334155', fontWeight: '600', marginBottom: '4px' }}>
               Estado Geral de Funcionamento:
             </label>
             <select
@@ -388,12 +380,11 @@ export const MaternityDashboard = () => {
             style={{
               backgroundColor: '#0284C7',
               color: '#FFFFFF',
-              padding: '10px 16px',
-              borderRadius: '6px',
-              fontSize: '13px',
+              padding: '11px',
+              borderRadius: '8px',
+              fontSize: '13.5px',
               fontWeight: '700',
-              border: '1px solid #38BDF8',
-              marginTop: '8px',
+              marginTop: '4px',
             }}
           >
             {savingCapacity ? 'A gravar...' : 'Atualizar Capacidade Hospitalar'}
@@ -401,7 +392,7 @@ export const MaternityDashboard = () => {
         </div>
       </div>
 
-      {/* Modal de Confirmação de Recepção (Etapa 6) */}
+      {/* Modal de Confirmação de Recepção */}
       {selectedOccurrence && (
         <div
           style={{
@@ -410,7 +401,8 @@ export const MaternityDashboard = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(3, 7, 18, 0.8)',
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(3px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -420,25 +412,26 @@ export const MaternityDashboard = () => {
         >
           <div
             style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid #334155',
-              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
               padding: '24px',
               maxWidth: '520px',
               width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
             }}
           >
-            <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#F8FAFC', marginBottom: '4px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>
               Confirmar Recepção e Admissão Hospitalar
             </h3>
-            <p style={{ fontSize: '12px', color: '#94A3B8', marginBottom: '16px' }}>
-              Protocolo: <strong style={{ color: '#F8FAFC' }}>{selectedOccurrence.protocolo_codigo}</strong> | Paciente:{' '}
-              <strong style={{ color: '#38BDF8' }}>{selectedOccurrence.gravida_nome || selectedOccurrence.solicitante_nome}</strong>
+            <p style={{ fontSize: '12.5px', color: '#64748B', marginBottom: '16px' }}>
+              Protocolo: <strong style={{ color: '#0F172A' }}>{selectedOccurrence.protocolo_codigo}</strong> | Paciente:{' '}
+              <strong style={{ color: '#0284C7' }}>{selectedOccurrence.gravida_nome || selectedOccurrence.solicitante_nome}</strong>
             </p>
 
             <form onSubmit={handleConfirmReception} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', fontWeight: '600', marginBottom: '4px' }}>
                   Profissional de Saúde Responsável pela Recepção *
                 </label>
                 <input
@@ -451,7 +444,7 @@ export const MaternityDashboard = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94A3B8', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', fontWeight: '600', marginBottom: '4px' }}>
                   Observações de Entrada na Admissão / Triagem
                 </label>
                 <textarea
@@ -467,7 +460,7 @@ export const MaternityDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedOccurrence(null)}
-                  style={{ padding: '8px 14px', fontSize: '12px', color: '#94A3B8' }}
+                  style={{ padding: '8px 14px', fontSize: '12.5px', color: '#64748B', backgroundColor: '#F1F5F9', borderRadius: '6px' }}
                 >
                   Cancelar
                 </button>
@@ -478,11 +471,11 @@ export const MaternityDashboard = () => {
                     color: '#FFFFFF',
                     padding: '8px 18px',
                     borderRadius: '6px',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     fontWeight: '700',
                   }}
                 >
-                  Confirmar Recepção & Concluir Ciclo
+                  Confirmar Recepção & Concluir
                 </button>
               </div>
             </form>

@@ -48,52 +48,50 @@ export const SmsLogDrawer = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registo e Visualização de Mensagens SMS"
-      subtitle="Comunicações automáticas de confirmação e atualização enviadas para os telefones dos utentes"
-      maxWidth="650px"
+      title="Gateway de Mensagens SMS (Notificações Luanda)"
+      subtitle="Registo de notificações automáticas enviadas para grávidas, familiares e equipas hospitalares"
+      maxWidth="680px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Envio Manual Simulado */}
-        <form
-          onSubmit={handleSendCustom}
-          style={{
-            backgroundColor: '#0B1120',
-            border: '1px solid #1E293B',
-            borderRadius: '6px',
-            padding: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#38BDF8' }}>
-            Expedir Mensagem SMS de Apoio / Orientação:
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="text"
-              placeholder="+244 9..."
-              value={targetPhone}
-              onChange={(e) => setTargetPhone(e.target.value)}
-              style={{ width: '160px', fontSize: '12px' }}
-            />
-            <input
-              type="text"
-              placeholder="Escreva a mensagem (ex: Mantenha a calma, ambulância a 5 minutos)..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              style={{ flex: 1, fontSize: '12px' }}
-            />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        {/* Envio Manual de SMS */}
+        <form onSubmit={handleSendCustom} style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+          <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', marginBottom: '10px' }}>
+            Simular Disparo de SMS de Emergência:
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '10px', alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+                Telefone (+244)
+              </label>
+              <input
+                type="text"
+                value={targetPhone}
+                onChange={(e) => setTargetPhone(e.target.value)}
+                style={{ width: '100%', fontSize: '13px', padding: '8px 10px' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+                Texto da Mensagem
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Ambulância a caminho..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                style={{ width: '100%', fontSize: '13px', padding: '8px 10px' }}
+              />
+            </div>
             <button
               type="submit"
               disabled={sending}
               style={{
                 backgroundColor: '#0284C7',
                 color: '#FFFFFF',
-                padding: '6px 12px',
+                padding: '9px 16px',
                 borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
+                fontSize: '13px',
+                fontWeight: '700',
               }}
             >
               {sending ? 'A enviar...' : 'Enviar SMS'}
@@ -101,59 +99,62 @@ export const SmsLogDrawer = ({ isOpen, onClose }) => {
           </div>
         </form>
 
-        {/* Lista de SMS */}
+        {/* Histórico de Mensagens Enviadas */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#94A3B8' }}>
-              Histórico Recente de Mensagens SMS:
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>
+              Histórico Recente de Notificações SMS ({messages.length})
             </span>
-            <button onClick={fetchLogs} style={{ fontSize: '11px', color: '#38BDF8' }}>
-              Atualizar Lista
+            <button
+              onClick={fetchLogs}
+              style={{ fontSize: '12px', color: '#0284C7', fontWeight: '600' }}
+            >
+              ↻ Atualizar
             </button>
           </div>
 
-          <div
-            style={{
-              maxHeight: '320px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            {messages.length === 0 ? (
-              <p style={{ fontSize: '12px', color: '#64748B', textAlign: 'center', padding: '16px' }}>
-                Nenhuma mensagem SMS registada.
-              </p>
-            ) : (
-              messages.map((sms) => (
-                <div
-                  key={sms.id}
-                  style={{
-                    backgroundColor: '#1E293B',
-                    border: '1px solid #334155',
-                    borderRadius: '6px',
-                    padding: '10px 12px',
-                    fontSize: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '700', color: '#F8FAFC' }}>
-                      {sms.telefone_destino}
-                    </span>
-                    <span style={{ color: '#10B981', fontSize: '11px', fontWeight: '600' }}>
-                      ✓ {sms.status_entrega}
-                    </span>
-                  </div>
-                  <p style={{ color: '#E2E8F0', lineHeight: 1.4 }}>{sms.conteudo}</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748B', marginTop: '6px' }}>
-                    {sms.protocolo_codigo ? <span>Protocolo: {sms.protocolo_codigo}</span> : <span />}
-                    <span className="tabular-nums">{new Date(sms.created_at).toLocaleString('pt-AO')}</span>
-                  </div>
+          {loading ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+              A carregar histórico...
+            </div>
+          ) : (
+            <div style={{ maxHeight: '340px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {messages.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#94A3B8', fontSize: '13px' }}>
+                  Nenhum SMS registado ainda.
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                messages.map((sms) => (
+                  <div
+                    key={sms.id}
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748B' }}>
+                      <span>
+                        Para: <strong style={{ color: '#0F172A' }}>{sms.telefone_destino}</strong>
+                      </span>
+                      <span>{new Date(sms.criado_em).toLocaleTimeString('pt-PT')}</span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: '#1E293B', lineHeight: 1.4 }}>
+                      {sms.conteudo}
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
+                      <span>Canal: {sms.canal}</span>
+                      <span style={{ color: '#059669', fontWeight: '600' }}>✓ Entregue (Simulação)</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

@@ -50,59 +50,63 @@ export const UssdSimulator = ({ isOpen, onClose, onOccurrenceCreated }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Simulador de Sessão USSD (*114#)"
-      subtitle="Canal alternativo offline para redes móveis em Angola sem necessidade de ligação à internet"
+      title="Simulador de Canal USSD (*114# Luanda)"
+      subtitle="Canal de telecomunicação sem dados móveis (2G/GSM) para acesso universal e inclusivo em Angola"
       maxWidth="460px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
-        {/* Phone Frame */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        {/* Mock Feature Phone */}
         <div
           style={{
-            width: '100%',
-            maxWidth: '380px',
-            backgroundColor: '#020617',
-            border: '2px solid #334155',
-            borderRadius: '16px',
-            padding: '16px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+            width: '320px',
+            backgroundColor: '#0F172A',
+            borderRadius: '24px',
+            padding: '20px 16px',
+            border: '8px solid #334155',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
           }}
         >
+          {/* Top Speaker */}
+          <div style={{ width: '40px', height: '4px', backgroundColor: '#475569', borderRadius: '2px', margin: '0 auto 12px' }} />
+
           {/* LCD Screen */}
           <div
             style={{
-              backgroundColor: '#1E293B',
-              border: '2px solid #475569',
-              borderRadius: '8px',
-              padding: '14px',
-              minHeight: '160px',
+              backgroundColor: '#C5D8B6',
+              border: '2px solid #829C71',
+              borderRadius: '6px',
+              padding: '12px',
               fontFamily: 'monospace',
-              fontSize: '13px',
-              color: '#38BDF8',
-              whiteSpace: 'pre-line',
-              lineHeight: 1.5,
+              fontSize: '12px',
+              color: '#1A2E1A',
+              minHeight: '170px',
+              whiteSpace: 'pre-wrap',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.15)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
             }}
           >
             <div>{screenText}</div>
-            {loading && <div style={{ color: '#FCD34D', fontSize: '11px', marginTop: '8px' }}>Processando comando na rede móvel...</div>}
+            {loading && <div style={{ fontWeight: 'bold', marginTop: '6px' }}>A processar...</div>}
           </div>
 
-          {/* Input & Action */}
-          {!isEnd ? (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          {/* Input field inside phone */}
+          {!isEnd && (
+            <div style={{ marginTop: '12px', display: 'flex', gap: '6px' }}>
               <input
                 type="text"
+                placeholder="Resposta..."
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Resposta ou opção (1-4)..."
-                disabled={loading}
                 style={{
                   flex: 1,
-                  backgroundColor: '#0B1120',
-                  color: '#F8FAFC',
+                  backgroundColor: '#1E293B',
+                  color: '#FFFFFF',
+                  border: '1px solid #475569',
+                  borderRadius: '4px',
+                  padding: '6px 10px',
                   fontSize: '13px',
                 }}
               />
@@ -112,62 +116,68 @@ export const UssdSimulator = ({ isOpen, onClose, onOccurrenceCreated }) => {
                 style={{
                   backgroundColor: '#0284C7',
                   color: '#FFFFFF',
-                  padding: '8px 14px',
-                  borderRadius: '6px',
-                  fontWeight: '600',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
                   fontSize: '12px',
+                  fontWeight: '700',
                 }}
               >
-                Enviar
+                OK
               </button>
             </div>
-          ) : (
-            <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          )}
+
+          {/* Keypad Quick Actions */}
+          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((k) => (
               <button
-                onClick={handleReset}
+                key={k}
+                onClick={() => {
+                  if (!isEnd) setInputVal((prev) => prev + k);
+                }}
                 style={{
-                  backgroundColor: '#059669',
-                  color: '#FFFFFF',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
+                  backgroundColor: '#1E293B',
+                  color: '#CBD5E1',
+                  border: '1px solid #334155',
+                  padding: '8px 0',
+                  borderRadius: '4px',
+                  fontSize: '13px',
                   fontWeight: '600',
-                  fontSize: '12px',
                 }}
               >
-                Discar *114# Novamente
+                {k}
               </button>
-            </div>
-          )}
+            ))}
+          </div>
 
-          {/* Quick keypad shortcuts */}
-          {!isEnd && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '12px' }}>
-              {['1', '2', '3', '4'].map((btn) => (
-                <button
-                  key={btn}
-                  onClick={() => handleSend(btn)}
-                  disabled={loading}
-                  style={{
-                    backgroundColor: '#1E293B',
-                    color: '#E2E8F0',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    border: '1px solid #334155',
-                  }}
-                >
-                  {btn}
-                </button>
-              ))}
-            </div>
-          )}
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
+            <button
+              onClick={handleReset}
+              style={{
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: '700',
+              }}
+            >
+              Reiniciar *114#
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                backgroundColor: '#334155',
+                color: '#CBD5E1',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '11px',
+              }}
+            >
+              Sair
+            </button>
+          </div>
         </div>
-
-        {/* Informative Note */}
-        <p style={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', lineHeight: 1.4 }}>
-          * O serviço USSD funciona em qualquer telemóvel simples sem internet. Como não transmite GPS automático, a localização (Bairro e Ponto de Referência) é recolhida textualmente pelo menu.
-        </p>
       </div>
     </Modal>
   );

@@ -79,13 +79,10 @@ export const CallCenterDashboard = () => {
       const res = await api.getOccurrenceById(oc.id);
       if (res.success) {
         setSelectedOccurrence(res.ocorrencia);
-        setTriagePriority(res.ocorrencia.prioridade !== 'Pendente' ? res.ocorrencia.prioridade : 'Nível 1 - Vermelho');
-        setTriageJustification(res.ocorrencia.justificativa_prioridade || '');
-        setSelectedMaternityId(res.ocorrencia.maternidade_destino_id || '');
-        setSelectedAmbulanceId(res.ocorrencia.ambulancia_id || '');
+        setTriagePriority(res.ocorrencia.prioridade || 'Nível 1 - Vermelho');
       }
     } catch (err) {
-      console.error(err);
+      setSelectedOccurrence(oc);
     }
   };
 
@@ -95,75 +92,67 @@ export const CallCenterDashboard = () => {
     try {
       await api.validateTriage(selectedOccurrence.id, {
         prioridade: triagePriority,
-        justificativa_prioridade: triageJustification || `Protocolo clínico validado pelo operador ${user.nome}`,
+        justificativa: triageJustification || 'Triagem protocolada pelo operador da Central 114',
       });
+      setTriageJustification('');
       loadAllData();
     } catch (err) {
-      alert(`Erro: ${err.message}`);
+      alert(`Erro na validação de triagem: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDispatchAmbulance = async () => {
-    if (!selectedOccurrence || !selectedAmbulanceId) {
-      alert('Selecione uma viatura para despacho.');
-      return;
-    }
+    if (!selectedOccurrence || !selectedAmbulanceId) return;
     setActionLoading(true);
     try {
       await api.dispatchAmbulance(selectedOccurrence.id, {
-        ambulancia_id: selectedAmbulanceId,
+        ambulancia_id: parseInt(selectedAmbulanceId, 10),
       });
       loadAllData();
     } catch (err) {
-      alert(`Erro: ${err.message}`);
+      alert(`Erro no despacho de ambulância: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleReferMaternity = async () => {
-    if (!selectedOccurrence || !selectedMaternityId) {
-      alert('Selecione a maternidade de destino.');
-      return;
-    }
+    if (!selectedOccurrence || !selectedMaternityId) return;
     setActionLoading(true);
     try {
       await api.referToMaternity(selectedOccurrence.id, {
-        maternidade_id: selectedMaternityId,
-        observacoes_encaminhamento: 'Encaminhamento com aviso prévio transmitido à equipa obstétrica hospitalar.',
+        maternidade_id: parseInt(selectedMaternityId, 10),
+        comunicacao_previa: true,
       });
       loadAllData();
     } catch (err) {
-      alert(`Erro: ${err.message}`);
+      alert(`Erro no encaminhamento hospitalar: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleFlagSuspicious = async () => {
-    if (!selectedOccurrence || !suspiciousReason.trim()) {
-      alert('Indique o motivo da suspeita de inconsistência ou trote.');
-      return;
-    }
+    if (!selectedOccurrence || !suspiciousReason.trim()) return;
     setActionLoading(true);
     try {
       await api.flagSuspicious(selectedOccurrence.id, {
-        motivo_suspeita: suspiciousReason,
+        motivo: suspiciousReason,
       });
       setSuspiciousReason('');
       loadAllData();
     } catch (err) {
-      alert(`Erro: ${err.message}`);
+      alert(`Erro ao sinalizar suspeita: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
-  const calculateWaitMinutes = (tempoInicio) => {
-    if (!tempoInicio) return 0;
-    const diff = Math.floor((new Date() - new Date(tempoInicio)) / 60000);
+  const calculateWaitMinutes = (inicio) => {
+    if (!inicio) return 0;
+    const diff = Math.floor((new Date() - new Date(inicio)) / 60000);
     return Math.max(0, diff);
   };
 
@@ -178,52 +167,53 @@ export const CallCenterDashboard = () => {
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#0F172A',
-          border: '1px solid #1E293B',
-          borderRadius: '8px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: '12px',
           padding: '16px 24px',
           marginBottom: '24px',
           gap: '16px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div>
-            <span style={{ fontSize: '12px', color: '#38BDF8', fontWeight: '700', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '11px', color: '#0284C7', fontWeight: '800', letterSpacing: '0.04em' }}>
               CENTRAL 114 DE ATENDIMENTO E REGULAÇÃO
             </span>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#F8FAFC', marginTop: '2px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
               Posto de Atendimento: {user.nome}
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Estado de Atendimento:</span>
+            <span style={{ fontSize: '12.5px', color: '#64748B', fontWeight: '600' }}>Estado:</span>
             {['Disponível', 'Em atendimento', 'Pausa Técnica'].map((st) => (
               <button
                 key={st}
                 onClick={() => setShiftStatus(st)}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: '5px',
-                  fontSize: '12.5px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
                   fontWeight: shiftStatus === st ? '700' : '500',
-                  minHeight: '34px',
+                  minHeight: '32px',
                   backgroundColor:
                     shiftStatus === st
                       ? st === 'Disponível'
-                        ? 'rgba(16, 185, 129, 0.2)'
+                        ? '#ECFDF5'
                         : st === 'Em atendimento'
-                        ? 'rgba(217, 119, 6, 0.2)'
-                        : '#334155'
-                      : '#1E293B',
+                        ? '#FFFBEB'
+                        : '#F1F5F9'
+                      : '#FFFFFF',
                   color:
                     shiftStatus === st
                       ? st === 'Disponível'
-                        ? '#34D399'
+                        ? '#047857'
                         : st === 'Em atendimento'
-                        ? '#FBBF24'
-                        : '#CBD5E1'
-                      : '#94A3B8',
-                  border: shiftStatus === st ? '1px solid currentColor' : '1px solid #334155',
+                        ? '#B45309'
+                        : '#475569'
+                      : '#64748B',
+                  border: shiftStatus === st ? '1px solid currentColor' : '1px solid #CBD5E1',
                 }}
               >
                 {st}
@@ -237,17 +227,16 @@ export const CallCenterDashboard = () => {
             onClick={() => setPhoneModalOpen(true)}
             style={{
               padding: '10px 18px',
-              borderRadius: '6px',
+              borderRadius: '8px',
               backgroundColor: '#DC2626',
               color: '#FFFFFF',
               fontSize: '13.5px',
               fontWeight: '700',
-              border: '1px solid #B91C1C',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               minHeight: '40px',
-              boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)',
+              boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)',
             }}
           >
             <span style={{ fontSize: '15px' }}>☎</span> Atender Chamada 114
@@ -260,20 +249,21 @@ export const CallCenterDashboard = () => {
         {/* Fila de Prioridades */}
         <div
           style={{
-            backgroundColor: '#0F172A',
-            border: '1px solid #1E293B',
-            borderRadius: '8px',
-            padding: '18px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '12px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #1E293B' }}>
-            <h3 style={{ fontSize: '15.5px', fontWeight: '700', color: '#F8FAFC' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
               Fila Operacional por Prioridade ({occurrences.length})
             </h3>
-            <span style={{ fontSize: '13px', color: '#94A3B8' }}>
-              Ambulâncias Livres: <strong style={{ color: '#10B981' }}>{freeAmbulances.length}</strong> de {ambulances.length}
+            <span style={{ fontSize: '12.5px', color: '#64748B' }}>
+              Ambulâncias Livres: <strong style={{ color: '#059669' }}>{freeAmbulances.length}</strong> de {ambulances.length}
             </span>
           </div>
 
@@ -287,9 +277,9 @@ export const CallCenterDashboard = () => {
                   key={oc.id}
                   onClick={() => handleSelectOccurrence(oc)}
                   style={{
-                    backgroundColor: isSelected ? '#1E293B' : '#0B1120',
-                    border: isSelected ? '1px solid #0284C7' : '1px solid #1E293B',
-                    borderRadius: '7px',
+                    backgroundColor: isSelected ? '#F0F9FF' : '#F8FAFC',
+                    border: isSelected ? '2px solid #0284C7' : '1px solid #E2E8F0',
+                    borderRadius: '8px',
                     padding: '14px 16px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -297,28 +287,28 @@ export const CallCenterDashboard = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
                     <div>
-                      <span className="tabular-nums" style={{ fontSize: '14.5px', fontWeight: '800', color: '#F8FAFC' }}>
+                      <span className="tabular-nums" style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A' }}>
                         {oc.protocolo_codigo}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#94A3B8', marginLeft: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#64748B', marginLeft: '8px' }}>
                         via {oc.canal_entrada}
                       </span>
                     </div>
                     <PriorityBadge prioridade={oc.prioridade} />
                   </div>
 
-                  <div style={{ fontSize: '14px', color: '#CBD5E1', marginBottom: '6px', fontWeight: '600' }}>
+                  <div style={{ fontSize: '14px', color: '#1E293B', marginBottom: '6px', fontWeight: '700' }}>
                     {oc.gravida_nome || oc.solicitante_nome}
                     {oc.gravida_semanas ? ` (${oc.gravida_semanas} semanas)` : ''}
                   </div>
 
-                  <div style={{ fontSize: '12.5px', color: '#94A3B8', marginBottom: '10px' }}>
-                    Zona: <strong style={{ color: '#E2E8F0' }}>{oc.bairro}</strong> ({oc.ponto_referencia})
+                  <div style={{ fontSize: '12.5px', color: '#64748B', marginBottom: '10px' }}>
+                    Zona: <strong style={{ color: '#0F172A' }}>{oc.bairro}</strong> ({oc.ponto_referencia})
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
                     <StatusBadge estado={oc.estado_ocorrencia} />
-                    <span className="tabular-nums" style={{ color: waitMins > 15 ? '#EF4444' : '#94A3B8', fontWeight: '500' }}>
+                    <span className="tabular-nums" style={{ color: waitMins > 15 ? '#DC2626' : '#64748B', fontWeight: '600' }}>
                       Espera: <strong>{waitMins} min</strong>
                     </span>
                   </div>
@@ -332,26 +322,27 @@ export const CallCenterDashboard = () => {
         {selectedOccurrence ? (
           <div
             style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid #1E293B',
-              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
               padding: '24px',
               display: 'flex',
               flexDirection: 'column',
               gap: '18px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
             }}
           >
             {/* Header do Detalhe */}
-            <div style={{ borderBottom: '1px solid #1E293B', paddingBottom: '14px' }}>
+            <div style={{ borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
-                  <span style={{ fontSize: '12px', color: '#38BDF8', fontWeight: '700', letterSpacing: '0.04em' }}>
+                  <span style={{ fontSize: '11px', color: '#0284C7', fontWeight: '800', letterSpacing: '0.04em' }}>
                     PAINEL DETALHADO DA OCORRÊNCIA
                   </span>
-                  <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#F8FAFC', marginTop: '2px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
                     {selectedOccurrence.protocolo_codigo}
                   </h3>
-                  <div style={{ fontSize: '13.5px', color: '#94A3B8', marginTop: '3px' }}>
+                  <div style={{ fontSize: '13px', color: '#64748B', marginTop: '3px' }}>
                     Solicitante: <strong>{selectedOccurrence.solicitante_nome}</strong> ({selectedOccurrence.solicitante_telefone}) | Canal: {selectedOccurrence.canal_entrada}
                   </div>
                 </div>
@@ -369,30 +360,25 @@ export const CallCenterDashboard = () => {
             </div>
 
             {/* Informações Clínicas e Sintomatologia */}
-            <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '6px' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#38BDF8', marginBottom: '8px' }}>
+            <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0284C7', marginBottom: '8px' }}>
                 Sintomas e Descrição da Emergência:
               </div>
-              <p style={{ fontSize: '14.5px', color: '#F8FAFC', lineHeight: 1.5, marginBottom: '10px' }}>
+              <p style={{ fontSize: '14px', color: '#0F172A', lineHeight: 1.5, marginBottom: '10px', fontWeight: '600' }}>
                 {selectedOccurrence.descricao_sintomas}
               </p>
 
               {selectedOccurrence.condicoes_clinicas && selectedOccurrence.condicoes_clinicas.length > 0 && (
-                <div style={{ fontSize: '12.5px', color: '#FCD34D', fontWeight: '500' }}>
-                  Condições Pré-Natais Registadas: {selectedOccurrence.condicoes_clinicas.join(', ')}
-                </div>
-              )}
-              {selectedOccurrence.observacoes_prenatal && (
-                <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px' }}>
-                  Obs. Pré-Natal: {selectedOccurrence.observacoes_prenatal}
+                <div style={{ fontSize: '12px', color: '#B45309', fontWeight: '600' }}>
+                  Condições Pré-Natais: {selectedOccurrence.condicoes_clinicas.join(', ')}
                 </div>
               )}
             </div>
 
             {/* Localização e Acessibilidade Viária em Luanda */}
-            <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '6px' }}>
+            <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#38BDF8' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#0284C7' }}>
                   Localização e Condições da Via (Luanda):
                 </span>
                 <RoadAccessibilityBadge
@@ -400,25 +386,25 @@ export const CallCenterDashboard = () => {
                   pontoEncontro={selectedOccurrence.ponto_encontro_coordenadas}
                 />
               </div>
-              <div style={{ fontSize: '13.5px', color: '#E2E8F0' }}>
+              <div style={{ fontSize: '13px', color: '#334155' }}>
                 Bairro: <strong>{selectedOccurrence.bairro}</strong> | Rua: {selectedOccurrence.rua || 'Não indicada'}
               </div>
-              <div style={{ fontSize: '13.5px', color: '#E2E8F0', marginTop: '3px' }}>
+              <div style={{ fontSize: '13px', color: '#334155', marginTop: '3px' }}>
                 Ponto de Referência: <strong>{selectedOccurrence.ponto_referencia}</strong>
               </div>
             </div>
 
-            {/* Ações Operacionais: 3 Blocos de Decisão Humana */}
+            {/* Ações Operacionais */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-              {/* Bloco 1: Validação de Triagem (Etapa 3) */}
-              <div style={{ backgroundColor: '#0B1120', border: '1px solid #1E293B', borderRadius: '6px', padding: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#F8FAFC', marginBottom: '10px' }}>
-                  1. Triagem Clínica Protocolada
+              {/* Bloco 1: Validação de Triagem */}
+              <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
+                  1. Triagem Clínica
                 </div>
                 <select
                   value={triagePriority}
                   onChange={(e) => setTriagePriority(e.target.value)}
-                  style={{ width: '100%', marginBottom: '10px', fontSize: '13.5px', padding: '9px 12px' }}
+                  style={{ width: '100%', marginBottom: '8px', fontSize: '13px', padding: '8px 10px' }}
                 >
                   <option value="Nível 1 - Vermelho">Nível 1 — Vermelho (Crítico / Imediato)</option>
                   <option value="Nível 2 - Amarelo">Nível 2 — Amarelo (Urgente)</option>
@@ -429,7 +415,7 @@ export const CallCenterDashboard = () => {
                   placeholder="Justificativa clínica do operador..."
                   value={triageJustification}
                   onChange={(e) => setTriageJustification(e.target.value)}
-                  style={{ width: '100%', marginBottom: '10px', fontSize: '13px', padding: '8px 12px' }}
+                  style={{ width: '100%', marginBottom: '8px', fontSize: '12.5px', padding: '8px 10px' }}
                 />
                 <button
                   onClick={handleValidateTriage}
@@ -439,25 +425,24 @@ export const CallCenterDashboard = () => {
                     backgroundColor: '#0284C7',
                     color: '#FFFFFF',
                     padding: '8px 14px',
-                    borderRadius: '5px',
-                    fontSize: '13.5px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
                     fontWeight: '700',
-                    minHeight: '38px',
                   }}
                 >
                   Confirmar Triagem
                 </button>
               </div>
 
-              {/* Bloco 2: Despacho de Ambulância (Etapa 4) */}
-              <div style={{ backgroundColor: '#0B1120', border: '1px solid #1E293B', borderRadius: '6px', padding: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#F8FAFC', marginBottom: '10px' }}>
-                  2. Despacho de Viatura de Socorro
+              {/* Bloco 2: Despacho de Ambulância */}
+              <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
+                  2. Despacho de Viatura
                 </div>
                 <select
                   value={selectedAmbulanceId}
                   onChange={(e) => setSelectedAmbulanceId(e.target.value)}
-                  style={{ width: '100%', marginBottom: '10px', fontSize: '13.5px', padding: '9px 12px' }}
+                  style={{ width: '100%', marginBottom: '8px', fontSize: '13px', padding: '8px 10px' }}
                 >
                   <option value="">Selecione a ambulância...</option>
                   {ambulances.map((amb) => (
@@ -474,10 +459,9 @@ export const CallCenterDashboard = () => {
                     backgroundColor: '#DC2626',
                     color: '#FFFFFF',
                     padding: '8px 14px',
-                    borderRadius: '5px',
-                    fontSize: '13.5px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
                     fontWeight: '700',
-                    minHeight: '38px',
                   }}
                 >
                   Despachar Viatura
@@ -485,21 +469,21 @@ export const CallCenterDashboard = () => {
               </div>
             </div>
 
-            {/* Bloco 3: Encaminhamento para Maternidade (Etapa 5) */}
-            <div style={{ backgroundColor: '#0B1120', border: '1px solid #1E293B', borderRadius: '6px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#F8FAFC', marginBottom: '10px' }}>
-                3. Encaminhamento Hospitalar e Aviso Prévio à Maternidade
+            {/* Bloco 3: Encaminhamento para Maternidade */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
+                3. Encaminhamento Hospitalar e Notificação Prévia
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <select
                   value={selectedMaternityId}
                   onChange={(e) => setSelectedMaternityId(e.target.value)}
-                  style={{ flex: 1, minWidth: '260px', fontSize: '13.5px', padding: '9px 12px' }}
+                  style={{ flex: 1, minWidth: '240px', fontSize: '13px', padding: '8px 10px' }}
                 >
-                  <option value="">Selecione a unidade obstétrica de destino...</option>
+                  <option value="">Selecione a maternidade...</option>
                   {maternities.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.nome} ({m.sigla}) — {m.camas_obstetricas_livres} camas livres | {m.estado_funcionamento}
+                      {m.nome} ({m.sigla}) — {m.camas_obstetricas_livres} camas livres
                     </option>
                   ))}
                 </select>
@@ -510,48 +494,44 @@ export const CallCenterDashboard = () => {
                     backgroundColor: '#059669',
                     color: '#FFFFFF',
                     padding: '8px 18px',
-                    borderRadius: '5px',
-                    fontSize: '13.5px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
                     fontWeight: '700',
-                    whiteSpace: 'nowrap',
-                    minHeight: '38px',
                   }}
                 >
-                  Enviar Aviso à Maternidade
+                  Avisar Maternidade
                 </button>
               </div>
             </div>
 
-            {/* Salvaguarda: Sinalizar Pedido Suspeito para Revisão Humana */}
-            <div style={{ borderTop: '1px solid #1E293B', paddingTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Suspeita de Trote */}
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 type="text"
-                placeholder="Motivo de suspeita de trote (para revisão do supervisor)..."
+                placeholder="Motivo de suspeita (para revisão do supervisor)..."
                 value={suspiciousReason}
                 onChange={(e) => setSuspiciousReason(e.target.value)}
-                style={{ flex: 1, minWidth: '240px', fontSize: '13px', padding: '8px 12px' }}
+                style={{ flex: 1, minWidth: '220px', fontSize: '12.5px', padding: '7px 10px' }}
               />
               <button
                 onClick={handleFlagSuspicious}
                 disabled={actionLoading || !suspiciousReason.trim()}
                 style={{
-                  backgroundColor: '#7F1D1D',
-                  color: '#FCA5A5',
-                  padding: '8px 14px',
-                  borderRadius: '5px',
-                  fontSize: '12.5px',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  border: '1px solid #DC2626',
-                  minHeight: '36px',
+                  backgroundColor: '#FEF2F2',
+                  color: '#DC2626',
+                  padding: '7px 14px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  border: '1px solid #FCA5A5',
                 }}
               >
-                Sinalizar Suspeita (Revisão)
+                Sinalizar Suspeita
               </button>
             </div>
           </div>
         ) : (
-          <div style={{ backgroundColor: '#0F172A', padding: '40px', textAlign: 'center', color: '#94A3B8', borderRadius: '8px', fontSize: '15px' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', padding: '40px', textAlign: 'center', color: '#64748B', borderRadius: '12px', fontSize: '14px' }}>
             Selecione uma ocorrência na fila para visualizar os dados clínicos e conduzir as ações operacionais.
           </div>
         )}

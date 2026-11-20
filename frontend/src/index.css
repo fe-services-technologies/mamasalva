@@ -1,35 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --bg-app: #0B1120;
-  --bg-surface: #0F172A;
-  --bg-panel: #1E293B;
-  --bg-card: #0F172A;
-  --border-subtle: #334155;
-  --border-strong: #475569;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
+  /* Hospital Clean White Theme */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-panel: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
+  
+  --text-main: #0F172A;
+  --text-muted: #475569;
   --text-dim: #64748B;
   
-  /* Semantic Priority Colors */
+  /* Hospital Medical Primary Colors */
+  --primary: #0284C7;
+  --primary-hover: #0369A1;
+  --primary-light: #E0F2FE;
+  --primary-border: #BAE6FD;
+  
+  /* Semantic Priority Colors (Clinical Light) */
   --priority-l1: #DC2626;
-  --priority-l1-bg: rgba(220, 38, 38, 0.18);
-  --priority-l1-border: #B91C1C;
+  --priority-l1-bg: #FEF2F2;
+  --priority-l1-border: #FCA5A5;
+  --priority-l1-text: #991B1B;
   
   --priority-l2: #D97706;
-  --priority-l2-bg: rgba(217, 119, 6, 0.18);
-  --priority-l2-border: #B45309;
+  --priority-l2-bg: #FFFBEB;
+  --priority-l2-border: #FDE68A;
+  --priority-l2-text: #92400E;
   
   --priority-l3: #059669;
-  --priority-l3-bg: rgba(5, 150, 105, 0.18);
-  --priority-l3-border: #15803D;
+  --priority-l3-bg: #ECFDF5;
+  --priority-l3-border: #A7F3D0;
+  --priority-l3-text: #065F46;
 
   /* Road Accessibility */
-  --access-normal: #10B981;
-  --access-conditioned: #F59E0B;
-  --access-impossible: #EF4444;
+  --access-normal: #059669;
+  --access-normal-bg: #ECFDF5;
+  --access-conditioned: #D97706;
+  --access-conditioned-bg: #FFFBEB;
+  --access-impossible: #DC2626;
+  --access-impossible-bg: #FEF2F2;
 }
 
 * {
@@ -38,24 +52,18 @@
   padding: 0;
 }
 
+/* Escala padrão equivalente a 125% do Chrome (16px * 1.25 = 20px base) */
 html {
-  font-size: 16px;
+  font-size: 20px;
   -webkit-text-size-adjust: 100%;
-}
-
-/* Otimização explícita para 125% zoom / alta densidade de ecrã no Chrome */
-@media screen and (min-resolution: 115dpi), screen and (min-resolution: 1.2dppx) {
-  html {
-    font-size: 16.5px;
-  }
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
   color: var(--text-main);
-  line-height: 1.55;
-  font-size: 15px;
+  line-height: 1.6;
+  font-size: 18px; /* Tamanho 125% ampliado para conforto e clareza */
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -77,43 +85,73 @@ button {
 }
 
 button:hover {
-  filter: brightness(1.1);
+  filter: brightness(0.96);
 }
 
 button:active {
   transform: translateY(1px);
 }
 
+/* Campos de entrada ampliados (125% touch & readability) */
 input, select, textarea {
   font-family: inherit;
   color: var(--text-main);
-  background-color: #0F172A;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: 15px;
-  line-height: 1.4;
-  transition: border-color 0.15s ease;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-size: 17px;
+  line-height: 1.45;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94A3B8;
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #38BDF8;
-  box-shadow: 0 0 0 1px #38BDF8;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.18);
 }
 
-/* Custom Scrollbar */
+/* Light Hospital Scrollbar */
 ::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B1120;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #CBD5E1;
+  border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94A3B8;
+}
+
+/* App animations and styling helpers */
+@keyframes pulseEmergency {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.sos-pulse {
+  animation: pulseEmergency 2.2s infinite;
+}
+
+.card-shadow {
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
+}
+
+.card-shadow-lg {
+  box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.07), 0 5px 8px -4px rgba(0, 0, 0, 0.04);
 }

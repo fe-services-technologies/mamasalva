@@ -1,28 +1,131 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-export const Header = ({ onOpenUssd, onOpenSms, onOpenContingency }) => {
+export const Header = ({ onOpenUssd, onOpenSms, onOpenContingency, isAdminView = false, onTogglePortal }) => {
   const { user, logout } = useAuth();
 
-  const getProfileTitle = (perfil) => {
-    switch (perfil) {
-      case 'gravida': return 'Utente / Grávida';
-      case 'cidadao': return 'Cidadão / Acompanhante';
-      case 'operador': return 'Operador Call Center 114';
-      case 'supervisor': return 'Supervisor Central de Regulação';
-      case 'equipa_emergencia': return 'Equipa de Resgate / Ambulância';
-      case 'maternidade': return 'Recepção Obstétrica Hospitalar';
-      case 'administrador': return 'Administrador de Sistema';
-      default: return perfil;
-    }
-  };
+  const isUserPortal = user?.perfil === 'gravida' || user?.perfil === 'cidadao';
 
+  // If in user/app mode, render a friendly, reassuring mobile/web app header
+  if (isUserPortal && !isAdminView) {
+    return (
+      <header
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #E2E8F0',
+          padding: '16px 24px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '820px',
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}
+        >
+          {/* Brand - MATERNITY SOS */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '22px',
+                fontWeight: '800',
+                boxShadow: '0 3px 8px rgba(220, 38, 38, 0.28)',
+                flexShrink: 0,
+              }}
+            >
+              ♥
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', letterSpacing: '-0.02em' }}>
+                  MATERNITY SOS
+                </h1>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    padding: '3px 8px',
+                    borderRadius: '5px',
+                    backgroundColor: '#E0F2FE',
+                    color: '#0284C7',
+                    fontWeight: '700',
+                  }}
+                >
+                  Luanda
+                </span>
+              </div>
+              <p style={{ fontSize: '13.5px', color: '#64748B', marginTop: '1px' }}>
+                Apoio e Socorro Obstétrico Imediato
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Call 114 Button & User Profile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <a
+              href="tel:114"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '800',
+                textDecoration: 'none',
+                boxShadow: '0 3px 6px rgba(220, 38, 38, 0.25)',
+              }}
+            >
+              <span style={{ fontSize: '17px' }}>📞</span>
+              <span>Ligar 114</span>
+            </a>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={logout}
+                title="Sair da aplicação"
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#F1F5F9',
+                  border: '1px solid #CBD5E1',
+                  color: '#475569',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                }}
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // Administrator / Hospital Staff Header
   return (
     <header
       style={{
-        backgroundColor: '#0F172A',
-        borderBottom: '1px solid #1E293B',
-        padding: '14px 28px',
+        backgroundColor: '#FFFFFF',
+        borderBottom: '1px solid #E2E8F0',
+        padding: '16px 28px',
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
@@ -31,50 +134,49 @@ export const Header = ({ onOpenUssd, onOpenSms, onOpenContingency }) => {
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
       }}
     >
-      {/* Brand & Context */}
+      {/* Brand & Hospital Subtitle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div
           style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '8px',
+            width: '48px',
+            height: '48px',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: '800',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#FFFFFF',
-            border: '1px solid #DC2626',
-            backgroundColor: '#B91C1C',
-            boxShadow: '0 2px 4px rgba(220, 38, 38, 0.4)',
+            backgroundColor: '#DC2626',
+            boxShadow: '0 3px 6px rgba(220, 38, 38, 0.28)',
             flexShrink: 0,
           }}
         >
           SOS
         </div>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.02em', color: '#F8FAFC' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ fontSize: '21px', fontWeight: '800', letterSpacing: '-0.02em', color: '#0F172A' }}>
               MATERNITY SOS
             </h1>
             <span
               style={{
-                fontSize: '12px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(220, 38, 38, 0.2)',
-                color: '#FCA5A5',
+                fontSize: '13px',
+                padding: '3px 10px',
+                borderRadius: '5px',
+                backgroundColor: '#FEE2E2',
+                color: '#DC2626',
                 fontWeight: '700',
               }}
             >
-              Luanda / Care
+              Área Administrativa & Central 114
             </span>
           </div>
-          <p style={{ fontSize: '12.5px', color: '#94A3B8', marginTop: '2px' }}>
-            Sistema Integrado de Gestão e Coordenação de Emergências Obstétricas
+          <p style={{ fontSize: '14px', color: '#64748B', marginTop: '2px' }}>
+            Coordenação de Emergências Obstétricas da Província de Luanda
           </p>
         </div>
       </div>
@@ -85,101 +187,108 @@ export const Header = ({ onOpenUssd, onOpenSms, onOpenContingency }) => {
           display: 'flex',
           alignItems: 'center',
           gap: '14px',
-          backgroundColor: '#0B1120',
-          padding: '8px 16px',
-          borderRadius: '6px',
-          border: '1px solid #1E293B',
-          fontSize: '13.5px',
+          backgroundColor: '#F8FAFC',
+          padding: '8px 18px',
+          borderRadius: '8px',
+          border: '1px solid #E2E8F0',
+          fontSize: '14.5px',
         }}
       >
-        <span style={{ color: '#94A3B8' }}>Contactos de Socorro:</span>
-        <span style={{ fontWeight: '700', color: '#EF4444' }}>Central 114</span>
-        <span style={{ color: '#475569' }}>|</span>
-        <span style={{ fontWeight: '700', color: '#38BDF8' }}>INEMA 112</span>
-        <span style={{ color: '#475569' }}>|</span>
-        <span style={{ fontWeight: '700', color: '#F59E0B' }}>Bombeiros 115</span>
+        <span style={{ color: '#64748B', fontWeight: '600' }}>Linhas Oficiais:</span>
+        <span style={{ fontWeight: '800', color: '#DC2626' }}>Central 114</span>
+        <span style={{ color: '#CBD5E1' }}>|</span>
+        <span style={{ fontWeight: '800', color: '#0284C7' }}>INEMA 112</span>
+        <span style={{ color: '#CBD5E1' }}>|</span>
+        <span style={{ fontWeight: '800', color: '#D97706' }}>Bombeiros 115</span>
       </div>
 
-      {/* Tools & Current User */}
+      {/* Admin Action Tools & User Identity */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        <button
-          onClick={onOpenUssd}
-          style={{
-            padding: '8px 14px',
-            borderRadius: '6px',
-            backgroundColor: '#1E293B',
-            color: '#E2E8F0',
-            fontSize: '13px',
-            fontWeight: '600',
-            border: '1px solid #334155',
-            minHeight: '38px',
-          }}
-          title="Abrir simulador interativo de código USSD para redes móveis"
-        >
-          Simulador USSD (*114#)
-        </button>
-
-        <button
-          onClick={onOpenSms}
-          style={{
-            padding: '8px 14px',
-            borderRadius: '6px',
-            backgroundColor: '#1E293B',
-            color: '#E2E8F0',
-            fontSize: '13px',
-            fontWeight: '600',
-            border: '1px solid #334155',
-            minHeight: '38px',
-          }}
-        >
-          Mensagens SMS
-        </button>
-
-        <button
-          onClick={onOpenContingency}
-          style={{
-            padding: '8px 14px',
-            borderRadius: '6px',
-            backgroundColor: '#1E293B',
-            color: '#FCD34D',
-            fontSize: '13px',
-            fontWeight: '600',
-            border: '1px solid #78350F',
-            minHeight: '38px',
-          }}
-          title="Instruções para contingência: falha de internet, falha de GPS ou ambulâncias indisponíveis"
-        >
-          Contingências
-        </button>
-
-        {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '6px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#F8FAFC' }}>
-                {user.nome}
-              </div>
-              <div style={{ fontSize: '12px', color: '#38BDF8', fontWeight: '500' }}>
-                {getProfileTitle(user.perfil)}
-              </div>
-            </div>
-
-            <button
-              onClick={logout}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '6px',
-                backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                color: '#FCA5A5',
-                fontSize: '13px',
-                fontWeight: '600',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-                minHeight: '38px',
-              }}
-            >
-              Sair
-            </button>
-          </div>
+        {onOpenUssd && (
+          <button
+            onClick={onOpenUssd}
+            style={{
+              fontSize: '14px',
+              padding: '8px 15px',
+              backgroundColor: '#F8FAFC',
+              border: '1.5px solid #CBD5E1',
+              borderRadius: '8px',
+              color: '#334155',
+              fontWeight: '700',
+            }}
+          >
+            📱 Simulador USSD
+          </button>
         )}
+
+        {onOpenSms && (
+          <button
+            onClick={onOpenSms}
+            style={{
+              fontSize: '14px',
+              padding: '8px 15px',
+              backgroundColor: '#F8FAFC',
+              border: '1.5px solid #CBD5E1',
+              borderRadius: '8px',
+              color: '#334155',
+              fontWeight: '700',
+            }}
+          >
+            ✉️ Gateway SMS
+          </button>
+        )}
+
+        {onOpenContingency && (
+          <button
+            onClick={onOpenContingency}
+            style={{
+              fontSize: '14px',
+              padding: '8px 15px',
+              backgroundColor: '#EFF6FF',
+              border: '1.5px solid #BFDBFE',
+              borderRadius: '8px',
+              color: '#1D4ED8',
+              fontWeight: '700',
+            }}
+          >
+            📋 Protocolos
+          </button>
+        )}
+
+        {/* User Info & Logout */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            paddingLeft: '12px',
+            borderLeft: '1.5px solid #E2E8F0',
+          }}
+        >
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
+              {user?.nome || 'Administrador'}
+            </div>
+            <div style={{ fontSize: '13px', color: '#0284C7', fontWeight: '700' }}>
+              {user?.perfil === 'administrador' ? 'Administrador Geral' : user?.perfil}
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            style={{
+              fontSize: '14px',
+              padding: '8px 14px',
+              backgroundColor: '#FEF2F2',
+              color: '#DC2626',
+              border: '1px solid #FECACA',
+              borderRadius: '8px',
+              fontWeight: '700',
+            }}
+          >
+            Sair
+          </button>
+        </div>
       </div>
     </header>
   );
